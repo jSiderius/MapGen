@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://clj12ic8xdpnq"]
+
+[ext_resource type="Material" uid="uid://cuj2fq81nwyfx" path="res://Resources/Shaders/white_shader_mat.tres" id="1_i65rg"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_p75u7"]
+
+[node name="white_tile" type="Sprite2D"]
+material = ExtResource("1_i65rg")
+position = Vector2(-75, 9)
+scale = Vector2(2, 2)
+texture = SubResource("CanvasTexture_p75u7")

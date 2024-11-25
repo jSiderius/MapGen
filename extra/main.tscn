@@ -1,0 +1,25 @@
+[gd_scene load_steps=6 format=3 uid="uid://cp68eoxntqu7v"]
+
+[ext_resource type="Script" path="res://extra/main.gd" id="1_pivwi"]
+[ext_resource type="PackedScene" uid="uid://b65qejrlmat1s" path="res://extra/black_tile.tscn" id="2_oa1w4"]
+[ext_resource type="PackedScene" uid="uid://clj12ic8xdpnq" path="res://extra/white_tile.tscn" id="3_8o1bt"]
+[ext_resource type="Script" path="res://camera_movement.gd" id="4_o7ior"]
+[ext_resource type="Material" uid="uid://bkficx0qflaft" path="res://Resources/Shaders/noise_shader_mat.tres" id="4_pqykr"]
+
+[node name="Node2D" type="Node2D"]
+script = ExtResource("1_pivwi")
+
+[node name="black_tile" parent="." instance=ExtResource("2_oa1w4")]
+scale = Vector2(3, 3)
+
+[node name="white_tile" parent="." instance=ExtResource("3_8o1bt")]
+scale = Vector2(3, 3)
+
+[node name="white_tile2" parent="." instance=ExtResource("3_8o1bt")]
+material = ExtResource("4_pqykr")
+position = Vector2(306, 177)
+scale = Vector2(200, 200)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(576, 324)
+script = ExtResource("4_o7ior")

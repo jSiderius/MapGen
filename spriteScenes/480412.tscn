@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://uw145d5dgnkj"]
+
+[ext_resource type="Texture2D" uid="uid://6sb4e2rilwwt" path="res://Resources/2871/480412-Road_4x4_17.png" id="1_ts7j5"]
+
+[node name="480412" type="Node2D"]
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(-3.46921, 204.531)
+rotation = 0.170858
+texture = ExtResource("1_ts7j5")
+
+[node name="Node2D" type="Node2D" parent="."]
+position = Vector2(-12, 417)
+rotation = 0.170858

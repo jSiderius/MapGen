@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dwlw0bkdery3f"]
+
+[ext_resource type="Script" path="res://code/main.gd" id="1_i8x8q"]
+
+[node name="ResizeableBoard" type="Node2D"]
+script = ExtResource("1_i8x8q")

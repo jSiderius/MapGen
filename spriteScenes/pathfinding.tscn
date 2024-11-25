@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://bw45edttvkyqr"]
+
+[ext_resource type="Script" path="res://spriteScenes/pathfinding.gd" id="1_sx1gb"]
+[ext_resource type="Texture2D" uid="uid://ic3mwoam0p5e" path="res://Resources/icon.svg" id="2_pelju"]
+
+[node name="Node2D" type="Node2D"]
+script = ExtResource("1_sx1gb")
+
+[node name="start" type="Sprite2D" parent="."]
+position = Vector2(100, 100)
+scale = Vector2(0.553, 0.553)
+texture = ExtResource("2_pelju")
+
+[node name="end" type="Sprite2D" parent="."]
+position = Vector2(1054, 765)
+scale = Vector2(0.552808, 0.552808)
+texture = ExtResource("2_pelju")

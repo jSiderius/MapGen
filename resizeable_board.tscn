@@ -1,0 +1,36 @@
+[gd_scene load_steps=5 format=3 uid="uid://dwlw0bkdery3f"]
+
+[ext_resource type="Script" path="res://code/main.gd" id="1_i8x8q"]
+[ext_resource type="Texture2D" uid="uid://obgjhuwjvyul" path="res://Resources/Village Assets/Village Map Assets Backgrounds - Autumn.jpg" id="2_fxkfp"]
+[ext_resource type="Texture2D" uid="uid://dekb7us5d5gaw" path="res://Resources/Village Assets/Village Map Assets Backgrounds - Grass.jpg" id="3_pevnk"]
+[ext_resource type="Texture2D" uid="uid://dy5ie0amg8wbt" path="res://Resources/Village Assets/Village Map Assets Backgrounds - Snow.jpg" id="4_h2bmj"]
+
+[node name="ResizeableBoard" type="Node2D"]
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_i8x8q")
+
+[node name="BGFall" type="Sprite2D" parent="Control"]
+visible = false
+z_index = -4096
+position = Vector2(606, 453)
+scale = Vector2(0.382292, 0.382292)
+texture = ExtResource("2_fxkfp")
+
+[node name="BGSpring" type="Sprite2D" parent="Control"]
+visible = false
+z_index = -4096
+position = Vector2(606, 453)
+scale = Vector2(0.382, 0.382)
+texture = ExtResource("3_pevnk")
+
+[node name="BGWinter" type="Sprite2D" parent="Control"]
+visible = false
+z_index = -4096
+position = Vector2(606, 453)
+scale = Vector2(0.382, 0.382)
+texture = ExtResource("4_h2bmj")

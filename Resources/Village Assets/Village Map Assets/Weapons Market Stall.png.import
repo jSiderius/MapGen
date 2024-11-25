@@ -1,0 +1,34 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://bxew2m72mg4u8"
+path="res://.godot/imported/Weapons Market Stall.png-049d7f9cb40fd0427d43e6feeae67b46.ctex"
+metadata={
+"vram_texture": false
+}
+
+[deps]
+
+source_file="res://Resources/Village Assets/Village Map Assets/Weapons Market Stall.png"
+dest_files=["res://.godot/imported/Weapons Market Stall.png-049d7f9cb40fd0427d43e6feeae67b46.ctex"]
+
+[params]
+
+compress/mode=0
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=false
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=1

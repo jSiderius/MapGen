@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3 uid="uid://rf3dbmxio6kb"]
+
+[ext_resource type="Texture2D" uid="uid://cmuorrx1s24dh" path="res://Resources/2871/480388-Road_4x4_01.png" id="1_8lrsb"]
+
+[node name="480338" type="Node2D"]
+
+[node name="sprite" type="Sprite2D" parent="."]
+position = Vector2(0, 218)
+texture = ExtResource("1_8lrsb")
+
+[node name="end_pos" type="Node2D" parent="."]
+position = Vector2(0, 436)
