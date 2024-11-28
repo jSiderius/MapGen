@@ -13,6 +13,7 @@ func generate_random_grid(width : int, height : int, alt_edges : bool = false) -
 	
 	return newBoolGrid 
 
+# Generates an idArray with values of all 0
 func generate_empty_id_array(width : int, height : int) -> Array: 
 	var newIdArray : Array = []
 	for x in width: 
@@ -21,7 +22,8 @@ func generate_empty_id_array(width : int, height : int) -> Array:
 			newIdArray[x].append(0)
 	return newIdArray
 
-func bool_array_to_id_array(boolArray : Array): 
+# Converts a boolArray to an idArray (false -> 0, true -> 1)
+func bool_array_to_id_array(boolArray : Array) -> Array: 
 	var idArrayNew : Array = []
 	for x in range(len(boolArray)):
 		idArrayNew.append([])
@@ -30,6 +32,9 @@ func bool_array_to_id_array(boolArray : Array):
 	
 	return idArrayNew
 
+# Converts an idArray to a bool array (1 -> false, 0 -> true) 
+# Used in Voronoi bool map
+# Not sure the reasoning for the conversion but not touching it because I don't currently need / use this function 
 func id_array_to_bool_array(idArrayArg : Array) -> Array: 
 	var boolArrayNew : Array = [] 
 	for x in range(len(idArrayArg)): 
@@ -38,10 +43,11 @@ func id_array_to_bool_array(idArrayArg : Array) -> Array:
 			boolArrayNew[x].append(false if idArrayArg[x][y] == 1 else true)
 	return boolArrayNew
 
+# Set the value of all edge squares in and idArray to 2
+# DEPRECIATED
 func id_array_create_edge_group(idArrayArg : Array) -> Array: 
-	for x in range(len(idArrayArg)): 
-		for y in range(len(idArrayArg[x])): 
-			if is_edge(x,y,len(idArrayArg),len(idArrayArg[x])): 
-				idArrayArg[x][y] = 2
+	for x in range(len(idArrayArg)): for y in range(len(idArrayArg[x])): 
+		if is_edge(x,y,len(idArrayArg),len(idArrayArg[x])): 
+			idArrayArg[x][y] = 2
 	return idArrayArg
 

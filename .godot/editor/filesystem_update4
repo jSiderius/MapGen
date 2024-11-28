@@ -1,0 +1,15 @@
+res://spriteScenes/pathfinding.tscn
+res://resizeable_board.tscn
+res://code/main.gd
+res://code/major_roads_algo.gd
+res://code/cellular_automata_algo.gd
+res://code/expand_automata_algo.gd
+res://code/flood_fill_algo.gd
+res://code/grid_gen_functions.gd
+res://code/helpers.gd
+res://code/reduction_algos.gd
+res://code/sprite_overlay.gd
+res://code/voronoi_overlay_algo.gd
+res://code/subdivide_districts_algo.gd
+res://extra/extra.gd
+res://extra/reduce_districts_algo.gd
