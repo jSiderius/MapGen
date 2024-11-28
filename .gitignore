@@ -10,6 +10,7 @@ export_presets.cfg # Export presets (can contain machine-specific paths)
 .DS_Store          # macOS specific
 Thumbs.db          # Windows specific
 *.tmp              # Temporary files
+**/*.tmp
 *.swp              # Swap files (e.g., from Vim)
 
 # Editor files
