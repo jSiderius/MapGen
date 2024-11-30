@@ -44,12 +44,12 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(4)
 	
 	# Parse out the smallest groups 
-	idArray = parse_smallest_groups(idArray, 10) #parse_groups_by_size() also an option
+	idArray = parse_smallest_groups(idArray, 3) 
 	if debug: await redraw_and_pause(5)
 	
 	# Expand groups into null space (1)
 	idArray = expand_id_array(idArray, [2])
-	idArray = expand_id_array(idArray, [2], true)
+	# idArray = expand_id_array(idArray, [2], true)
 	if debug: await redraw_and_pause(6, 2.0, true)
 	
 	# Make sure border is correct 
@@ -66,7 +66,6 @@ func _ready() -> void:
 	idArray = expand_id_array(idArray, [2, -3], true) # This just helps cleanup any lingering void (1) values
 	if debug: await redraw_and_pause(9, 0.3, true)
 
-	return 
 	# Determine major roads spanning the districts and add them to the array 
 	idArray = add_major_roads(idArray)
 	if debug: await redraw_and_pause(10)
