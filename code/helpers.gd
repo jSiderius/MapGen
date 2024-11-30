@@ -53,10 +53,43 @@ func get_random_color(_seed : int) -> Color:
 var lastExitTime : float = 0.0 
 # Takes the algorithm number (int) and the amount of time to stall (float)
 # Prints the amount of time the algorithm took, and stall for visual analysis 
-func redraw_and_pause(alg : int, stall : float = 1.0) -> void:
-	# print()
+func redraw_and_pause(alg : int, stall : float = 1.0, screenshot = true) -> void:
 	print("Algorithm ", alg, " complete in ", (Time.get_ticks_msec() / 1000.0) - lastExitTime, " seconds")
 	queue_redraw()
 	await get_tree().create_timer(stall).timeout
+	if screenshot: take_screenshot()
 	print("\t exit redraw_and_pause()")
 	lastExitTime = Time.get_ticks_msec() / 1000.0
+
+# Takes an ID array 
+# Compiles and returns a dictionary representing all groups in the array
+func get_groups_dict(idArray : Array) -> Dictionary: 
+	var groups_dict = {} 
+	for row in idArray: for val in row:
+		if val <= 2: continue 
+		if val not in groups_dict: 
+			groups_dict[val] = 1
+			continue
+		groups_dict[val]+=1
+	return groups_dict
+
+# Custom sorting function on the second element of an array 
+func _sort_by_second_element(a, b):
+	return a[1] < b[1]
+
+var startTime : String = Time.get_datetime_string_from_system()
+var path = "/Users/joshsiderius/Desktop/GodotSS/%s" % [startTime]
+var error = DirAccess.make_dir_recursive_absolute(path)
+
+func take_screenshot():
+	# Get the root viewport
+	var root_viewport = get_viewport()
+	# Capture the viewport as an image
+	var screenshot = root_viewport.get_texture().get_image()
+	# Flip the image vertically (necessary for correct orientation)
+	screenshot.flip_y()
+	
+	# Save the screenshot to a file
+	var file_path = "/Users/joshsiderius/Desktop/GodotSS/%s/%d.png" % [startTime, Time.get_ticks_usec()]
+	var _error = screenshot.save_png(file_path)
+	

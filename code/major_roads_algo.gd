@@ -4,7 +4,7 @@ var pq : Resource = preload("res://code/priority_queue.gd")
 
 # Takes an ID array
 # Determines the set of major roads between district centers, sets them in the array, returns 
-func find_major_roads(idArray : Array) -> Array: 
+func add_major_roads(idArray : Array) -> Array: 
 
 	#print(find_district_centers(idArray).keys() as Array[Vector2])
 	var dcs : Array[Vector2]
@@ -13,19 +13,18 @@ func find_major_roads(idArray : Array) -> Array:
 	for i in range(len(dcs)): for j in range(i+1, len(dcs)): 
 		roads.append([dcs[i], dcs[j]])
 	
-	roads = modified_mst(roads, dcs)
+	idArray = add_modified_mst(idArray, roads, dcs)
 
-	return set_roads_in_id_array(idArray, roads)
+	for dc in dcs: 
+		idArray[dc[0]][dc[1]] = -2
 
-# Takes an ID array and array of roads [Vector2,Vector2]
-# Runs A* between the start and end points of each road, sets the values in the array and returns
-func set_roads_in_id_array(idArray : Array, roads : Array) -> Array: 
-	for road in roads:
-		idArray = a_star(idArray, road[0], road[1])
-		idArray[road[0][0]][road[0][1]] = -2
-		idArray[road[1][0]][road[1][1]] = -2
-	
 	return idArray
+	
+func positions_to_roads(idArray : Array, route : Array[Vector2]) -> Array: 
+	for node in route: 
+		idArray[node[0]][node[1]] = -1 
+	return idArray
+
 
 # Takes an ID array
 # Calculates the center of mass for each district and returns the coords as the key's of a dictionary leading to the district ID 
@@ -66,22 +65,37 @@ func find_district_centers(idArray : Array) -> Dictionary:
 
 # Takes edges [[Vector2, Vector2] ... ] and vertices [Vector2 ... ] defining a graph G(V,E)
 # Gets an MST of the graph then selects aditional edges for the tree 
-func modified_mst(edges : Array[Array], vertices : Array[Vector2], ratio = 1.3): 
+func add_modified_mst(idArray : Array, edges : Array[Array], vertices : Array[Vector2], ratio = 1.3) -> Array: 
 	
 	edges.sort_custom(_sort_by_length)
-	var mst : Array[Array] = kruskals_mst(edges, vertices)
 
-	var distPrev : Array[Dictionary] = dijkstras_all_to_all(mst, vertices)
+	var a_star_lengths : Dictionary = {} 
+	var mst : Array[Array] = kruskals_mst(edges, vertices)
+	for edge in mst: 
+		var route : Array[Vector2] = a_star(idArray, edge[0], edge[1])
+		idArray = positions_to_roads(idArray, route) 
+		a_star_lengths[edge] = len(route)
+
+
+	var distPrev : Array[Dictionary] = dijkstras_all_to_all(mst, vertices, a_star_lengths)
 	var dist : Dictionary = distPrev[0]
 	var prev : Dictionary = distPrev[1]
 
 	for edge in edges: 
-		var euclidian : float = edge[0].distance_to(edge[1])
-		if not dist[edge] > ratio * euclidian: continue
+		# var euclidian : float = edge[0].distance_to(edge[1])
+		var manhattan : float = abs(edge[0][0] - edge[1][0]) + abs(edge[0][1] - edge[1][1])
+		if dist[edge] <= ratio * manhattan: continue
+		print(dist[edge], " ", ratio * manhattan)
+
+		var route : Array[Vector2] = a_star(idArray, edge[0], edge[1])
+		if dist[edge] <= ratio * float(len(route)): continue 
+		idArray = positions_to_roads(idArray, route) 
+		a_star_lengths[edge] = len(route)
 
 		mst.append(edge)
-		var distPrevE1 : Array[Dictionary] = dijkstras_one_to_all(mst, vertices, edge[0])
-		var distPrevE2 : Array[Dictionary] = dijkstras_one_to_all(mst, vertices, edge[1])
+
+		var distPrevE1 : Array[Dictionary] = dijkstras_one_to_all(mst, vertices, edge[0], a_star_lengths)
+		var distPrevE2 : Array[Dictionary] = dijkstras_one_to_all(mst, vertices, edge[1], a_star_lengths)
 
 		for v in vertices: 
 			dist[[edge[0], v]] = distPrevE1[0][v]
@@ -89,15 +103,8 @@ func modified_mst(edges : Array[Array], vertices : Array[Vector2], ratio = 1.3):
 
 			dist[[edge[1], v]] = distPrevE2[0][v]
 			prev[[edge[1], v]] = distPrevE2[1][v]
-
-
-
-	
-
-	# TODO: Add travelled distance / true distance ratio as a selection metric
-	# Can run Dijkstra's on euclidian distance here, running on mst length is probably better but more complicated and costly 
-	
-	return mst
+		
+	return idArray
 
 # Takes edges [[Vector2, Vector2] ... ] and vertices [Vector2 ... ] defining a graph G(V,E)
 # Calculates a true MST of the graph via kruskals algorithm and returns 
@@ -126,12 +133,12 @@ func kruskals_mst(edges : Array[Array], vertices : Array[Vector2]) -> Array[Arra
 
 # Takes edges [[Vector2, Vector2] ... ] and vertices [Vector2 ... ] defining a graph G(V,E) 
 # Runs dijkstras and returns a dict of the distances from all nodes to all nodes and a dictionary indicating the one step path of any node to any node 
-func dijkstras_all_to_all(edges : Array[Array], vertices : Array[Vector2]) -> Array[Dictionary]: 
+func dijkstras_all_to_all(edges : Array[Array], vertices : Array[Vector2], alt_weights : Variant = null) -> Array[Dictionary]: 
 	var dist : Dictionary = {}
 	var prev : Dictionary = {} 
 
 	for v1 in vertices: 
-		var distPrevV1 : Array[Dictionary] = dijkstras_one_to_all(edges, vertices, v1)
+		var distPrevV1 : Array[Dictionary] = dijkstras_one_to_all(edges, vertices, v1, alt_weights)
 
 		for v2 in vertices: 
 			dist[[v1, v2]] = distPrevV1[0][v2]
@@ -141,28 +148,31 @@ func dijkstras_all_to_all(edges : Array[Array], vertices : Array[Vector2]) -> Ar
 
 # Takes edges [[Vector2, Vector2] ... ] and vertices [Vector2 ... ] defining a graph G(V,E) and a starting vertex (Vector2 \in vertices) 
 # Runs dijkstras and returns a dict of the distances from all nodes to start and a dictionary indicating the path backwards from a node
-func dijkstras_one_to_all(edges : Array[Array], vertices : Array[Vector2], start : Vector2) -> Array[Dictionary]: 
+func dijkstras_one_to_all(edges : Array[Array], vertices : Array[Vector2], start : Vector2, alt_weights : Variant = null) -> Array[Dictionary]: 
 	var dist : Dictionary = {} 
 	var prev : Dictionary = {} 
 
 	for v in vertices: 
-		dist[v] = 999999999
+		dist[v] = 0 if v == start else 999999999
 		prev[v] = null 
-	
+		
 	var q : PriorityQueue = pq.new()
 	q.insert(start, 0)
 
 	while not q.is_empty(): 
-		
 		var v : Vector2 = q.pop_min()
 
 		for u in find_outgoing_graph_neighbors(edges, v): 
-			var edge_weight : float = v.distance_to(u)
+			var edge_weight : float = v.distance_to(u) if alt_weights == null else alt_weights[[v, u]] #Todo: cover u -> v case 
 			var alt : float = dist[v] + edge_weight 
+			
 			if alt < dist[u]: 
 				dist[u] = alt 
 				prev[u] = v 
-				q.insert_or_update(v, alt)
+				q.insert_or_update(u, alt)
+
+			if dist[u] == 999999999: 
+				print(v, " ", u, " ", edge_weight, " ", alt, " ", dist[v])
 	
 	return [dist, prev]
 
@@ -187,7 +197,7 @@ func _sort_by_length(a,b):
 	
 # Takes an ID array, start and end vectors (Vector2) and an array of previously visited nodes
 # Custom implemenation of the A* algorithm using random weight additions, sets visited values to road (-1)
-func a_star(idArray : Array, start : Vector2, end : Vector2, prev : Array = []): 
+func a_star(idArray : Array, start : Vector2, end : Vector2, prev : Array[Vector2] = []) -> Array[Vector2]: 
 
 	# Initialize random weighing for each node for more natural appearance 
 	var rand_weights = []
@@ -202,14 +212,14 @@ func a_star(idArray : Array, start : Vector2, end : Vector2, prev : Array = []):
 				rand_weights[x][y] += 150
 
 	
-	idArray[start[0]][start[1]] = -1
+	#idArray[start[0]][start[1]] = -1
 	var min_n : Vector2 = Vector2(0,0)
 	var min_value = INF
 	for i in range(len(four_neighbors)):
 		# Get and screen neighbor  
 		var n : Vector2 = Vector2(start[0]+four_neighbors[i][0], start[1]+four_neighbors[i][1])
 		if n in prev or not bounds_check(int(n[0]), int(n[1]), len(idArray), len(idArray[0])): continue
-		if n == end: return idArray
+		if n == end: return prev
 
 		# Calculate the hueristic value of the neighbor
 		var hueristic_value = rand_weights[n[0]][n[1]] + pow(pow(float(n[0]) - float(end[0]), 2.0) + pow(float(n[1]) - float(end[1]), 2.0), 0.5) #all cost's are g(n)=1
@@ -220,5 +230,6 @@ func a_star(idArray : Array, start : Vector2, end : Vector2, prev : Array = []):
 			min_n = n
 	
 	prev.append(min_n)
-	if idArray[min_n[0]][min_n[1]] == -1: return idArray #TODO: Break if found a road square working?? 
+	#TODO: How can this work with needing path distances? 
+	# if idArray[min_n[0]][min_n[1]] == -1: return idArray 
 	return a_star(idArray, min_n, end, prev)

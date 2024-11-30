@@ -2,12 +2,14 @@ extends "res://code/reduction_algos.gd"
 
 # Takes ints representing width and height of the resulting array and num_cells representing the number of random voronoi cells
 # Generates num_cells voronoi cells randomly and returns a array with the cell ID if it is not an edge cell and 0 otherwise
-func generate_voronoi_binary_id_array(width : int, height : int, num_cells=100) -> Array: 
+func generate_voronoi_binary_id_array(width : int, height : int, num_cells=100, dis_from_edge_p : float = 0.05) -> Array: 
 	var idArray : Array = generate_empty_id_array(width, height)
 	
 	var cells : Array = []
-	for i in range(num_cells): cells.append(Vector2(randi()%width, randi()%height))
-	
+	for i in range(num_cells): 
+		var w_dis : int = ceil(width * dis_from_edge_p)
+		var h_dis : int = ceil(height * dis_from_edge_p)
+		cells.append(Vector2(w_dis + randi()%(width - 2 * w_dis), h_dis + randi()% (height - 2 * h_dis)))
 	idArray = color_voronoi(idArray, cells)
 	
 	var edge_cells : Array = find_voronoi_edge_cells(idArray)

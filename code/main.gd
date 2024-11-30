@@ -48,8 +48,9 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(5)
 	
 	# Expand groups into null space (1)
-	idArray = expand_id_array(idArray)
-	if debug: await redraw_and_pause(6)
+	idArray = expand_id_array(idArray, [2])
+	idArray = expand_id_array(idArray, [2], true)
+	if debug: await redraw_and_pause(6, 2.0, true)
 	
 	# Make sure border is correct 
 	idArray = enforce_border(idArray)
@@ -59,12 +60,15 @@ func _ready() -> void:
 	idArray = flood_fill_elim_inside_terrain(idArray)
 	if debug: await redraw_and_pause(8, 0.3)
 
-	# Indentify which void nodes (1) are city walls (-3) and which are district walls ()
-	indentify_walls(idArray)
-	if debug: await redraw_and_pause(9, 0.3)
-	
+	# Indentify which void nodes (1) are city walls (-3) 
+	idArray = indentify_walls(idArray)
+	if debug: await redraw_and_pause(9, 0.3, true)
+	idArray = expand_id_array(idArray, [2, -3], true) # This just helps cleanup any lingering void (1) values
+	if debug: await redraw_and_pause(9, 0.3, true)
+
+	return 
 	# Determine major roads spanning the districts and add them to the array 
-	idArray = find_major_roads(idArray)
+	idArray = add_major_roads(idArray)
 	if debug: await redraw_and_pause(10)
 		
 	queue_redraw()
@@ -78,12 +82,13 @@ func draw_from_id_grid() -> void:
 	# Dictionary defining a mapping from values (int) in idArray to colors in the draw 
 	var colors_dict : Dictionary = {
 			-4 : Color.BLACK, # District walls 
-			-3 : Color.BLACK, # City walls
+			-3 : Color.GREEN, # City walls
 			-2 : Color.BLUE, #District Center
 			-1 : Color(128,128,128), # Major roads
 			0 : Color.WHITE, # Void space from noise, becomes obsolete
 			1 : Color.BLACK, # Void space from noise, becomes district and city walls 
-			2 : Color(0,0,0,0) # Outside space 
+			# 2 : Color(0,0,0,0) # Outside space 
+			2 : Color.GREEN
 	}
 
 	for x in range(len(idArray)): for y in range(len(idArray[x])): 
