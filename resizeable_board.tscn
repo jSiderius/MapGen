@@ -13,6 +13,9 @@ anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("1_i8x8q")
+debug = null
+squareSize = null
+threshold = null
 
 [node name="BGFall" type="Sprite2D" parent="Control"]
 visible = false

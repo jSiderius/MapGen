@@ -6,7 +6,6 @@ var pq : Resource = preload("res://code/priority_queue.gd")
 # Determines the set of major roads between district centers, sets them in the array, returns 
 func add_major_roads(idArray : Array) -> Array: 
 
-	#print(find_district_centers(idArray).keys() as Array[Vector2])
 	var dcs : Array[Vector2]
 	dcs.assign(find_district_centers(idArray).keys())
 	var roads : Array[Array] = []
@@ -65,7 +64,7 @@ func find_district_centers(idArray : Array) -> Dictionary:
 
 # Takes edges [[Vector2, Vector2] ... ] and vertices [Vector2 ... ] defining a graph G(V,E)
 # Gets an MST of the graph then selects aditional edges for the tree 
-func add_modified_mst(idArray : Array, edges : Array[Array], vertices : Array[Vector2], ratio = 1.3) -> Array: 
+func add_modified_mst(idArray : Array, edges : Array[Array], vertices : Array[Vector2], ratio = 1.5) -> Array: 
 	
 	edges.sort_custom(_sort_by_length)
 
@@ -75,6 +74,7 @@ func add_modified_mst(idArray : Array, edges : Array[Array], vertices : Array[Ve
 		var route : Array[Vector2] = a_star(idArray, edge[0], edge[1])
 		idArray = positions_to_roads(idArray, route) 
 		a_star_lengths[edge] = len(route)
+		a_star_lengths[[edge[1], edge[0]]] = len(route)
 
 
 	var distPrev : Array[Dictionary] = dijkstras_all_to_all(mst, vertices, a_star_lengths)
@@ -85,12 +85,12 @@ func add_modified_mst(idArray : Array, edges : Array[Array], vertices : Array[Ve
 		# var euclidian : float = edge[0].distance_to(edge[1])
 		var manhattan : float = abs(edge[0][0] - edge[1][0]) + abs(edge[0][1] - edge[1][1])
 		if dist[edge] <= ratio * manhattan: continue
-		print(dist[edge], " ", ratio * manhattan)
 
 		var route : Array[Vector2] = a_star(idArray, edge[0], edge[1])
 		if dist[edge] <= ratio * float(len(route)): continue 
 		idArray = positions_to_roads(idArray, route) 
 		a_star_lengths[edge] = len(route)
+		a_star_lengths[[edge[1], edge[0]]] = len(route)
 
 		mst.append(edge)
 
@@ -171,15 +171,14 @@ func dijkstras_one_to_all(edges : Array[Array], vertices : Array[Vector2], start
 				prev[u] = v 
 				q.insert_or_update(u, alt)
 
-			if dist[u] == 999999999: 
-				print(v, " ", u, " ", edge_weight, " ", alt, " ", dist[v])
-	
 	return [dist, prev]
 
+# Assumes unidirectional
 func find_outgoing_graph_neighbors(edges : Array, start : Vector2) -> Array: 
 	neighbors = []
 	for e in edges:
 		if e[0] == start and e[1] not in neighbors: neighbors.append(e[1]) 
+		if e[1] == start and e[0] not in neighbors: neighbors.append(e[0])
 
 	return neighbors
 
@@ -195,6 +194,8 @@ func _sort_by_length(a,b):
 	var len_b : float = pow(pow(float(b[0][0]) - float(b[1][0]), 2.0) + pow(float(b[0][1]) - float(b[1][1]), 2.0), 0.5)
 	return len_a < len_b
 	
+# TODO: See if infinite recursion is modifiable
+# TODO: Search pathing not deterministic
 # Takes an ID array, start and end vectors (Vector2) and an array of previously visited nodes
 # Custom implemenation of the A* algorithm using random weight additions, sets visited values to road (-1)
 func a_star(idArray : Array, start : Vector2, end : Vector2, prev : Array[Vector2] = []) -> Array[Vector2]: 
@@ -205,7 +206,8 @@ func a_star(idArray : Array, start : Vector2, end : Vector2, prev : Array[Vector
 		rand_weights.append([])
 		for y in range(len(idArray[x])): 
 			# Random weighting 
-			rand_weights[x].append(randf_range(0, 1))
+			rand_weights[x].append(randf_range(0, 3))
+			# rand_weights[x].append(0)
 
 			# Large weighting for city border 
 			if idArray[x][y] == -3: 
