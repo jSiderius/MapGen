@@ -71,6 +71,6 @@ func indentify_walls(idArray) -> Array:
 				break
 
 		# Has not been set as city wall (-3) therefore must be district wall (-4)
-		if idArray[x][y] == 1: idArray[x][y] = -4
+		# if idArray[x][y] == 1: idArray[x][y] = -4
 
 	return idArray

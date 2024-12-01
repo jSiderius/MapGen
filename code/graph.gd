@@ -17,8 +17,8 @@ var height : int
 func _init(e : Array[Array], v : Array[Vector2], xLen : int = 0, yLen : int = 0) -> void: 
 	edges = e 
 	vertices = v
-	width = width 
-	height = height
+	width = xLen
+	height = yLen
 
 	if not check_graph(): 
 		print("not a valid graph")
@@ -80,7 +80,7 @@ func add_modified_mst(idArray : Array, ratio = 1.5) -> Array:
 	var mst : Array[Array] = kruskals_mst()
 	subGraph = graphLoad.new(mst, vertices)
 	for edge in mst: 
-		var route : Array[Vector2] = a_star(idArray, edge[0], edge[1])
+		var route : Array[Vector2i] = a_star(idArray, edge[0], edge[1])
 		idArray = positions_to_roads(idArray, route)
 		a_star_lengths[edge] = len(route)
 		a_star_lengths[[edge[1], edge[0]]] = len(route)
@@ -97,7 +97,7 @@ func add_modified_mst(idArray : Array, ratio = 1.5) -> Array:
 		var manhattan : float = abs(edge[0][0] - edge[1][0]) + abs(edge[0][1] - edge[1][1])
 		if dist[edge] <= ratio * manhattan: continue
 
-		var route : Array[Vector2] = a_star(idArray, edge[0], edge[1])
+		var route : Array[Vector2i] = a_star(idArray, edge[0], edge[1])
 		if dist[edge] <= ratio * float(len(route)): continue 
 		idArray = positions_to_roads(idArray, route) 
 		a_star_lengths[edge] = len(route)
@@ -172,31 +172,39 @@ func find_outgoing_graph_neighbors(start : Vector2) -> Array:
 # TODO: Search pathing not deterministic
 # Takes an ID array, start and end vectors (Vector2) and an array of previously visited nodes
 # Custom implemenation of the A* algorithm using random weight additions, sets visited values to road (-1)
-func a_star(idArray : Array, start : Vector2, end : Vector2, prev : Array[Vector2] = []) -> Array[Vector2]: 
-
+func a_star(idArray : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i]: 
+	
 	if randWeights == []: 
 		init_rand_weights(idArray)
-	var min_n : Vector2 = Vector2(0,0)
-	var min_value = INF
 	
-	for i in range(len(four_neighbors)):
-		# Get and screen neighbor  
-		var n : Vector2 = Vector2(start[0]+four_neighbors[i][0], start[1]+four_neighbors[i][1])
-		if n in prev or not bounds_check(int(n[0]), int(n[1]), len(idArray), len(idArray[0])): continue
-		if n == end: return prev
-	
-		# Calculate the hueristic value of the neighbor
-		var hueristic_value = randWeights[n[0]][n[1]] + pow(pow(float(n[0]) - float(end[0]), 2.0) + pow(float(n[1]) - float(end[1]), 2.0), 0.5) #all cost's are g(n)=1
+	var prevDict : Dictionary = {}
+	var pq : PriorityQueue = pqLoad.new()
+	pq.insert(start, 0)
+	while not pq.is_empty() and end not in prevDict: 
+		var curr : Vector2i = pq.pop_min()
+
+		for n in four_neighbors:
+			# Get and screen neighbor  
+			n = Vector2i(n[0]+curr[0], n[1]+curr[1])
+			if n in prevDict or not bounds_check(int(n[0]), int(n[1]), len(idArray), len(idArray[0])): continue
+			if n == end: 
+				prevDict[end] = curr
+				break
 		
-		# Update min_value accordingly
-		if hueristic_value < min_value: 
-			min_value = hueristic_value
-			min_n = n
-	
-	prev.append(min_n)
-	#TODO: How can this work with needing path distances? 
-	# if idArray[min_n[0]][min_n[1]] == -1: return idArray 
-	return a_star(idArray, min_n, end, prev)
+			# g(n) is random, h(n) is the manhattan distance
+			# var f_n = randWeights[n[0]][n[1]] + abs(n[0] - end[0]) + abs(n[1] - end[1]) 
+			var f_n = abs(n[0] - end[0]) + abs(n[1] - end[1]) 
+			pq.insert_or_reduce(n, f_n)
+			prevDict[n] = curr
+
+	if end not in prevDict: return []
+	var prev : Array[Vector2i] = []
+	var reconstruct : Vector2i = prevDict[end]	
+	while reconstruct != start: 
+		prev.append(reconstruct) 
+		reconstruct = prevDict[reconstruct]
+
+	return prev
 
 func init_rand_weights(idArray : Array):
 	# Initialize random weighing for each node for more natural appearance 
@@ -204,13 +212,13 @@ func init_rand_weights(idArray : Array):
 		randWeights.append([])
 		for y in range(len(idArray[x])): 
 			# Random weighting 
-			randWeights[x].append(randf_range(0, 3))
+			randWeights[x].append(randf_range(0, 1))
 
 			# Large weighting for city border 
 			if idArray[x][y] == -3: 
-				randWeights[x][y] += 150
+				randWeights[x][y] += 10000
 
-func positions_to_roads(idArray : Array, route : Array[Vector2]) -> Array: 
+func positions_to_roads(idArray : Array, route : Array[Vector2i]) -> Array: 
 	for node in route: 
 		idArray[node[0]][node[1]] = -1 
 	return idArray

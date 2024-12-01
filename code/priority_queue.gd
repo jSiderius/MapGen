@@ -16,19 +16,30 @@ func pop_min() -> Variant:
     heapify_down(0)
     return min_item[0]
     
-func insert_or_update(item : Variant, new_priority : float) -> void: 
+func insert_or_update(item : Variant, newPriority : float) -> void: 
     for i in range(len(heap)): 
         if not heap[i][0] == item: continue
         
         var priority : float = heap[i][1]
-        heap[i][1] = new_priority
-        if new_priority < priority:
+        heap[i][1] = newPriority
+        if newPriority < priority:
             heapify_up(i)
-        if new_priority > priority: 
+        if newPriority > priority: 
             heapify_down(i)
         return 
     
-    insert(item, new_priority)
+    insert(item, newPriority)
+
+func insert_or_reduce(item : Variant, newPriority : float) -> void: 
+    for i in range(len(heap)): 
+        if not heap[i][0] == item: continue
+        
+        if newPriority < heap[i][1]:
+            heap[i][1] = newPriority
+            heapify_up(i)
+        return 
+    
+    insert(item, newPriority)
 
 func heapify_up(i : int) -> void: 
     var parent : int = floor((i-1) / 2.0)
@@ -45,7 +56,7 @@ func heapify_down(i : int) -> void:
     if left < len(heap) and heap[i][1] > heap[left][1]: 
         swap(i, left)
         heapify_down(left)
-    elif right < len(heap) and heap[i][1] > heap[left][1]: 
+    elif right < len(heap) and heap[i][1] > heap[right][1]: 
         swap(i, right)
         heapify_down(right)
 
