@@ -1,37 +1,52 @@
 extends "res://code/voronoi_overlay_algo.gd"
 
+
 # Takes an ID array, an array of ids that are autonomous (can't be expanded into) district ids > 2 are assumed autonomous, and a bool indicating if empty space (2) should expand
 # Iteratively expands the groups (>2) of the array into the null space (1) until they are maximally expanded 
 func expand_id_array(idArray : Array, autonomous_ids : Array[int] = [], empty_space_expands : bool = false) -> Array:
-
-	var next : Array = idArray
-	while true: 
-		idArray = next
-		next = expand_id_array_instance(idArray, autonomous_ids, empty_space_expands)
-		if next == idArray: break
+	# var checks : Array = []
+	# var next : Array = idArray
+	# while true: 
+	# 	idArray = next
+	# 	next = expand_id_array_instance(idArray, autonomous_ids, empty_space_expands, checks)
+	# 	if next == idArray: break
+	# 	print("loop")
+	# idArray = find_value_by_distance(idArray)
+	idArray = expand_id_array_instance(idArray, autonomous_ids, empty_space_expands, [])
 	return idArray
-
 # Takes an ID array, an array of ids that are autonomous (can't be expanded into), and a bool indicating if empty space (2) should expand
 # Single iteration of each group node (>2) into null space (1) if possible 
-func expand_id_array_instance(idArray : Array, autonomous_ids : Array[int] = [], empty_space_expands : bool = false) -> Array: 
-	
+func expand_id_array_instance(idArray : Array, autonomous_ids : Array[int] = [], empty_space_expands : bool = false, checks : Array = []) -> Array: 
+	print("FUCKFUCKFUCK")
 	var idArrayNew : Array = idArray.duplicate(true)
+	var newChecks : Array = []
+
+	if checks == []:
+		for x in range(len(idArray)): for y in range(len(idArray[x])): 
+			check_square_for_expansion(x, y, idArray, idArrayNew, newChecks, empty_space_expands, autonomous_ids)
+	else: 
+		for check in checks: 
+			check_square_for_expansion(int(check[0]), int(check[1]), idArray, idArrayNew, newChecks, empty_space_expands, autonomous_ids)
+		
+	checks = newChecks
 	
-	for x in range(len(idArray)): 
-		for y in range(len(idArray[x])): 
-			# Make sure the square is a group node, and has not been previously updated in this iteration
-			if idArray[x][y] != idArrayNew[x][y]: continue
-			if idArray[x][y] <= 2 or (idArray[x][y] == 2 and empty_space_expands): continue 
-			
-			# Gather the candidate expansion neighbors 
-			var candidateNeighbors : Array = get_candidate_expansion_neighbors(idArrayNew, Vector2(x,y), autonomous_ids)
-			
-			# Determine if any candidates are valid for expansion
-			for n in candidateNeighbors: 
-				if is_valid_expansion_candidate(idArrayNew, Vector2(x+n[0], y+n[1]), idArrayNew[x][y], autonomous_ids, 1): 
-					idArrayNew[x+n[0]][y+n[1]] = idArray[x][y]
-					
-	return idArrayNew
+	#if len(newChecks) == 0: return expand_id_array_instance(idArrayNew, autonomous_ids, empty_space_expands, newChecks)
+	return idArrayNew 
+
+func check_square_for_expansion(x : int, y : int, idArray : Array, idArrayNew : Array, checks : Array, empty_space_expands, autonomous_ids):
+
+	# Make sure the square is a group node, and has not been previously updated in this iteration
+	if idArray[x][y] != idArrayNew[x][y]: return 
+	if idArray[x][y] <= 2 and not (idArray[x][y] == 2 and empty_space_expands): return
+	
+	# Gather the candidate expansion neighbors 
+	var candidateNeighbors : Array = get_candidate_expansion_neighbors(idArrayNew, Vector2(x,y), autonomous_ids)
+	
+	# Determine if any candidates are valid for expansion
+	for n in candidateNeighbors: 
+		if is_valid_expansion_candidate(idArrayNew, Vector2(x+n[0], y+n[1]), idArrayNew[x][y], autonomous_ids, 1): 
+			idArrayNew[x+n[0]][y+n[1]] = idArray[x][y]
+			checks.append([x,y])
 
 # Takes an ID array, a position vector (Vector2(x,y)), and an array of ids that are autonomous (can't be expanded into)
 # Returns valid candidates under bound and value contraints

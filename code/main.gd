@@ -48,10 +48,10 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(5, 0.1)
 	
 	# Expand groups into null space (1)
-	idArray = expand_id_array(idArray, [2])
-	# idArray = expand_id_array(idArray, [2], true)
+	# idArray = expand_id_array(idArray, [2])
+	idArray = expand_id_array(idArray, [2], true)
 	if debug: await redraw_and_pause(6, 0.1, true)
-	
+	 
 	#TODO: enforce_border and identify_walls??
 	# Make sure border is correct 
 	idArray = enforce_border(idArray)
@@ -81,13 +81,13 @@ func draw_from_id_grid() -> void:
 	# Dictionary defining a mapping from values (int) in idArray to colors in the draw 
 	var colors_dict : Dictionary = {
 			-4 : Color.BLACK, # District walls 
-			-3 : Color.GREEN, # City walls
+			-3 : Color.BLACK, # City walls
 			-2 : Color.BLUE, #District Center
-			-1 : Color(128,128,128), # Major roads
+			-1 : Color(205,133,63), # Major roads
 			0 : Color.WHITE, # Void space from noise, becomes obsolete
 			1 : Color.BLACK, # Void space from noise, becomes district and city walls 
-			# 2 : Color(0,0,0,0) # Outside space 
-			2 : Color.GREEN
+			2 : Color(0,0,0,0) # Outside space 
+			# 2 : Color.BLACK
 	}
 
 	for x in range(len(idArray)): for y in range(len(idArray[x])): 

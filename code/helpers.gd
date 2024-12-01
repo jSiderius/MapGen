@@ -13,6 +13,8 @@ var four_neighbors : Array = [
 		Vector2(-1,0),                 Vector2(1,0),
 					   Vector2(0,1)
 	]
+	
+var pqLoad : Resource = preload("res://code/priority_queue.gd")
 
 # Takes position (x (int), y (int)) and x max (int), y max (int)
 # Returns if (x, y) is on the edge of the constraints
@@ -53,7 +55,7 @@ func get_random_color(_seed : int) -> Color:
 var lastExitTime : float = 0.0 
 # Takes the algorithm number (int) and the amount of time to stall (float)
 # Prints the amount of time the algorithm took, and stall for visual analysis 
-func redraw_and_pause(alg : int, stall : float = 1.0, screenshot = false) -> void:
+func redraw_and_pause(alg : int, stall : float = 1.0, screenshot = true) -> void:
 	print("Algorithm ", alg, " complete in ", (Time.get_ticks_msec() / 1000.0) - lastExitTime, " seconds")
 	queue_redraw()
 	await get_tree().create_timer(stall).timeout
@@ -86,8 +88,6 @@ func take_screenshot():
 	var root_viewport = get_viewport()
 	# Capture the viewport as an image
 	var screenshot = root_viewport.get_texture().get_image()
-	# Flip the image vertically (necessary for correct orientation)
-	screenshot.flip_y()
 	
 	# Save the screenshot to a file
 	var file_path = "/Users/joshsiderius/Desktop/GodotSS/%s/%d.png" % [startTime, Time.get_ticks_usec()]

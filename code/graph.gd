@@ -4,7 +4,7 @@ class_name Graph
 
 var edges : Array[Array]
 var vertices : Array[Vector2]
-var pqLoad : Resource = preload("res://code/priority_queue.gd")
+#var pqLoad : Resource = preload("res://code/priority_queue.gd")
 var graphLoad : Resource = preload("res://code/graph.gd")
 var subGraph : Graph 
 var randWeights : Array[Array] = []
@@ -178,9 +178,6 @@ func a_star(idArray : Array, start : Vector2, end : Vector2, prev : Array[Vector
 		init_rand_weights(idArray)
 	var min_n : Vector2 = Vector2(0,0)
 	var min_value = INF
-	
-	print(len(randWeights), " ", len(idArray))
-	print(len(randWeights[0]), " ", len(idArray[0]))
 	
 	for i in range(len(four_neighbors)):
 		# Get and screen neighbor  
