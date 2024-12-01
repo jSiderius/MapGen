@@ -44,7 +44,7 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(4, 0.1)
 	
 	# Parse out the smallest groups 
-	idArray = parse_smallest_groups(idArray, 10) 
+	idArray = parse_smallest_groups(idArray, 6) 
 	if debug: await redraw_and_pause(5, 0.1)
 	
 	# Expand groups into null space (1)
