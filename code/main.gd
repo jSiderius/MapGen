@@ -81,7 +81,7 @@ func draw_from_id_grid() -> void:
 	# Dictionary defining a mapping from values (int) in idArray to colors in the draw 
 	var colors_dict : Dictionary = {
 			-4 : Color.BLACK, # District walls 
-			-3 : Color.GREEN, # City walls
+			-3 : Color.BLACK, # City walls
 			-2 : Color.BLUE, #District Center
 			-1 : Color(205,133,63), # Major roads
 			0 : Color.WHITE, # Void space from noise, becomes obsolete

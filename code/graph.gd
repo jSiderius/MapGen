@@ -72,7 +72,7 @@ func _sort_by_length(a,b):
 
 # Takes edges [[Vector2, Vector2] ... ] and vertices [Vector2 ... ] defining a graph G(V,E)
 # Gets an MST of the graph then selects aditional edges for the tree 
-func add_modified_mst(idArray : Array, ratio = 1.5) -> Array: 
+func add_modified_mst(idArray : Array, ratio = 1.8) -> Array: 
 
 	edges.sort_custom(_sort_by_length)
 
@@ -84,7 +84,6 @@ func add_modified_mst(idArray : Array, ratio = 1.5) -> Array:
 		idArray = positions_to_roads(idArray, route)
 		a_star_lengths[edge] = len(route)
 		a_star_lengths[[edge[1], edge[0]]] = len(route)
-
 
 	var distPrev : Array[Dictionary] = subGraph.dijkstras_all_to_all(a_star_lengths)
 	var dist : Dictionary = distPrev[0]
@@ -177,34 +176,39 @@ func a_star(idArray : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i
 	if randWeights == []: 
 		init_rand_weights(idArray)
 	
-	var prevDict : Dictionary = {}
+	var prev : Dictionary = {}
+	var dist : Dictionary = {}
 	var pq : PriorityQueue = pqLoad.new()
 	pq.insert(start, 0)
-	while not pq.is_empty() and end not in prevDict: 
+	prev[start] = null 
+	dist[start] = 0
+	while not pq.is_empty() and end not in prev: 
 		var curr : Vector2i = pq.pop_min()
 
 		for n in four_neighbors:
-			# Get and screen neighbor  
+	# 		# Get and screen neighbor  
 			n = Vector2i(n[0]+curr[0], n[1]+curr[1])
-			if n in prevDict or not bounds_check(int(n[0]), int(n[1]), len(idArray), len(idArray[0])): continue
-			if n == end: 
-				prevDict[end] = curr
+			if (n in dist and dist[n] <= dist[curr]+1) or not bounds_check(int(n[0]), int(n[1]), len(idArray), len(idArray[0])): continue
+			if n == end:
+				prev[end] = curr
+				dist[end] = dist[curr] + 1
 				break
 		
-			# g(n) is random, h(n) is the manhattan distance
+	# 		# g(n) is random, h(n) is the manhattan distance
 			# var f_n = randWeights[n[0]][n[1]] + abs(n[0] - end[0]) + abs(n[1] - end[1]) 
-			var f_n = abs(n[0] - end[0]) + abs(n[1] - end[1]) 
+			var f_n = randWeights[n[0]][n[1]] + n.distance_to(end) #abs(n[0] - end[0]) + abs(n[1] - end[1]) # #
 			pq.insert_or_reduce(n, f_n)
-			prevDict[n] = curr
+			prev[n] = curr 
+			dist[n] = dist[curr] + 1
 
-	if end not in prevDict: return []
-	var prev : Array[Vector2i] = []
-	var reconstruct : Vector2i = prevDict[end]	
-	while reconstruct != start: 
-		prev.append(reconstruct) 
-		reconstruct = prevDict[reconstruct]
+	var _path : Array[Vector2i] = []
+	if end not in prev: return path
+	var reconstruct : Vector2i = prev[end]
+	while reconstruct != start:
+		_path.append(reconstruct)
+		reconstruct = prev[reconstruct]
 
-	return prev
+	return _path
 
 func init_rand_weights(idArray : Array):
 	# Initialize random weighing for each node for more natural appearance 
@@ -212,7 +216,7 @@ func init_rand_weights(idArray : Array):
 		randWeights.append([])
 		for y in range(len(idArray[x])): 
 			# Random weighting 
-			randWeights[x].append(randf_range(0, 1))
+			randWeights[x].append(randf_range(0, 3))
 
 			# Large weighting for city border 
 			if idArray[x][y] == -3: 

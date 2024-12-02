@@ -43,7 +43,7 @@ func insert_or_reduce(item : Variant, newPriority : float) -> void:
 
 func heapify_up(i : int) -> void: 
     var parent : int = floor((i-1) / 2.0)
-    if i < 0 or heap[i][1] >= heap[parent][1]: return 
+    if parent < 0 or heap[i][1] >= heap[parent][1]: return 
 
     swap(i, parent)
     return heapify_up(parent)
