@@ -8,6 +8,7 @@ extends "res://code/cellular_automata_algo.gd"
 
 # Needs to be global for _draw()
 var idArray : Array = [] 
+var bbs : Dictionary = {}
 	
 func _ready() -> void: 
 	# Initialize  variables
@@ -24,7 +25,7 @@ func _ready() -> void:
 	backgrounds[randi()%3].visible = true
 
 	# Begin algorithms 
-	if debug: await redraw_and_pause(0, 0.0)
+	if debug: await redraw_and_pause(0, 0.0, false)
 
 	# Fill the initial grid 
 	idArray = generate_random_grid(width, height, true)
@@ -48,7 +49,6 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(5, 0.1)
 	
 	# Expand groups into null space (1)
-	# idArray = expand_id_array(idArray, [2])
 	idArray = expand_id_array(idArray, [2], true)
 	if debug: await redraw_and_pause(6, 0.1, true)
 	 
@@ -62,18 +62,55 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(8, 0.1)
 
 	# Indentify which void nodes (1) are city walls (-3) 
-	idArray = indentify_walls(idArray)
-	idArray = expand_id_array(idArray, [2, -3], true) # This just helps cleanup any lingering void (1) values
+	 # This just helps cleanup any lingering void (1) values
 	if debug: await redraw_and_pause(9, 0.1, true)
 
+	var multiplier : float = 1.5
+	idArray = increase_array_resolution(idArray, multiplier)
+	squareSize = squareSize / float(multiplier)
+	idArray = indentify_walls(idArray)
+	idArray = expand_id_array(idArray, [2, -3], true)
+
 	# Determine major roads spanning the districts and add them to the array 
-	idArray = add_major_roads(idArray)
+	var dcs : Array[Vector2i]
+	dcs.assign(find_district_centers(idArray).keys())
+	idArray = add_roads(idArray, dcs)
 	if debug: await redraw_and_pause(10)
-		
-	queue_redraw()
+
+	idArray = increase_array_resolution(idArray, 2)
+	squareSize = squareSize / float(2)
+
+	bbs  = find_district_bounding_boxes(idArray)
+
+	for key in bbs.keys(): 
+		idArray = add_district_border(idArray, key, bbs[key])
+		idArray = get_locations_in_district(idArray, key, bbs[key])
+		return 
+
+	if debug: await redraw_and_pause(11)
+
+
+
 	
 func _draw() -> void: 
 	draw_from_id_grid() 
+	# for key in bbs.keys():
+		# draw_bounding_box(get_random_color(key), squareSize, 5, bbs[key][0], bbs[key][1])
+
+func draw_bounding_box(col : Color, ss : float, line_width : float, first : Vector2i, second : Vector2i) -> void: 
+	# Convert the points to top-left and bottom-right for consistent rectangle rendering
+	var top_left = Vector2(ss * min(first.x, second.x), ss * min(first.y, second.y))
+	var bottom_right = Vector2(ss * (max(first.x, second.x) + 1), ss * (max(first.y, second.y) + 1))
+	
+	# Define the corners
+	var top_right = Vector2(bottom_right.x, top_left.y)
+	var bottom_left = Vector2(top_left.x, bottom_right.y)
+
+	# Draw the four sides of the rectangle with the specified line width
+	draw_line(top_left, top_right, col, line_width)  # Top side
+	draw_line(top_right, bottom_right, col, line_width)  # Right side
+	draw_line(bottom_right, bottom_left, col, line_width)  # Bottom side
+	draw_line(bottom_left, top_left, col, line_width)  # Left side
 
 # Takes nothing because it is an extension of _draw (uses global variables)
 # Draws to screen based on the values in idArray
@@ -83,11 +120,10 @@ func draw_from_id_grid() -> void:
 			-4 : Color.BLACK, # District walls 
 			-3 : Color.BLACK, # City walls
 			-2 : Color.BLUE, #District Center
-			-1 : Color(205,133,63), # Major roads
+			-1 : Color8(139,69,19), # Major roads
 			0 : Color.WHITE, # Void space from noise, becomes obsolete
 			1 : Color.BLACK, # Void space from noise, becomes district and city walls 
 			2 : Color(0,0,0,0) # Outside space 
-			# 2 : Color.BLACK
 	}
 
 	for x in range(len(idArray)): for y in range(len(idArray[x])): 

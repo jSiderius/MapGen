@@ -1,4 +1,4 @@
-extends "res://code/major_roads_algo.gd"
+extends "res://code/subdivide_districts_algo.gd"
 
 # Takes an ID array and the number of districts that should be in the algorithm (int)
 # Parses down to the number of districts and returns the array

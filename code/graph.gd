@@ -3,7 +3,7 @@ extends "res://code/helpers.gd"
 class_name Graph 
 
 var edges : Array[Array]
-var vertices : Array[Vector2]
+var vertices : Array[Vector2i]
 #var pqLoad : Resource = preload("res://code/priority_queue.gd")
 var graphLoad : Resource = preload("res://code/graph.gd")
 var subGraph : Graph 
@@ -14,7 +14,7 @@ var height : int
 #func _init() -> void:
 	#return
 
-func _init(e : Array[Array], v : Array[Vector2], xLen : int = 0, yLen : int = 0) -> void: 
+func _init(e : Array[Array], v : Array[Vector2i], xLen : int = 0, yLen : int = 0) -> void: 
 	edges = e 
 	vertices = v
 	width = xLen
@@ -28,7 +28,7 @@ func check_graph():
 		if not (edge[0] in vertices and edge[1] in vertices): return false
 	return true
 
-func add_edge(edge : Array[Vector2]): 
+func add_edge(edge : Array[Vector2i]): 
 	edges.append(edge)
 
 # Takes edges [[Vector2, Vector2] ... ] and vertices [Vector2 ... ] defining a graph G(V,E)
@@ -42,8 +42,8 @@ func kruskals_mst() -> Array[Array]:
 
 	var mst_edges : Array[Array] = []
 	for e in edges: 
-		var p1_head : Vector2 = find_set_head(sets, e[0])
-		var p2_head : Vector2 = find_set_head(sets, e[1])
+		var p1_head : Vector2i = find_set_head(sets, e[0])
+		var p2_head : Vector2i = find_set_head(sets, e[1])
 		if p1_head == p2_head:                                                                                                  
 			continue
 		if sets[p1_head][1] > sets[p2_head][1]: 
@@ -90,7 +90,7 @@ func add_modified_mst(idArray : Array, ratio = 1.8) -> Array:
 	var prev : Dictionary = distPrev[1]
 
 	for e in edges: 
-		var edge : Array[Vector2]
+		var edge : Array[Vector2i]
 		edge.assign(e)
 		# var euclidian : float = edge[0].distance_to(edge[1])
 		var manhattan : float = abs(edge[0][0] - edge[1][0]) + abs(edge[0][1] - edge[1][1])
@@ -133,7 +133,7 @@ func dijkstras_all_to_all(alt_weights : Variant = null) -> Array[Dictionary]:
 
 # Takes edges [[Vector2, Vector2] ... ] and vertices [Vector2 ... ] defining a graph G(V,E) and a starting vertex (Vector2 \in vertices) 
 # Runs dijkstras and returns a dict of the distances from all nodes to start and a dictionary indicating the path backwards from a node
-func dijkstras_one_to_all(start : Vector2, alt_weights : Variant = null) -> Array[Dictionary]: 
+func dijkstras_one_to_all(start : Vector2i, alt_weights : Variant = null) -> Array[Dictionary]: 
 	var dist : Dictionary = {} 
 	var prev : Dictionary = {} 
 
@@ -145,7 +145,7 @@ func dijkstras_one_to_all(start : Vector2, alt_weights : Variant = null) -> Arra
 	q.insert(start, 0)
 
 	while not q.is_empty(): 
-		var v : Vector2 = q.pop_min()
+		var v : Vector2i = q.pop_min()
 
 		for u in find_outgoing_graph_neighbors(v): 
 			var edge_weight : float = v.distance_to(u) if alt_weights == null else alt_weights[[v, u]] #Todo: cover u -> v case 
@@ -159,7 +159,7 @@ func dijkstras_one_to_all(start : Vector2, alt_weights : Variant = null) -> Arra
 	return [dist, prev]
 
 # Assumes unidirectional
-func find_outgoing_graph_neighbors(start : Vector2) -> Array: 
+func find_outgoing_graph_neighbors(start : Vector2i) -> Array: 
 	neighbors = []
 	for e in edges:
 		if e[0] == start and e[1] not in neighbors: neighbors.append(e[1]) 
@@ -188,18 +188,21 @@ func a_star(idArray : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i
 		for n in four_neighbors:
 	# 		# Get and screen neighbor  
 			n = Vector2i(n[0]+curr[0], n[1]+curr[1])
-			if (n in dist and dist[n] <= dist[curr]+1) or not bounds_check(int(n[0]), int(n[1]), len(idArray), len(idArray[0])): continue
+			if not bounds_check(int(n[0]), int(n[1]), len(idArray), len(idArray[0])): continue
 			if n == end:
 				prev[end] = curr
 				dist[end] = dist[curr] + 1
 				break
-		
-	# 		# g(n) is random, h(n) is the manhattan distance
-			# var f_n = randWeights[n[0]][n[1]] + abs(n[0] - end[0]) + abs(n[1] - end[1]) 
-			var f_n = randWeights[n[0]][n[1]] + n.distance_to(end) #abs(n[0] - end[0]) + abs(n[1] - end[1]) # #
+
+			var g_n : float = 1 + randWeights[n[0]][n[1]]
+			var h_n = abs(n[0] - end[0]) + abs(n[1] - end[1]) 
+			var f_n = g_n + h_n
+
+			if n in dist and dist[n] <= dist[curr]+g_n: continue  
+
 			pq.insert_or_reduce(n, f_n)
 			prev[n] = curr 
-			dist[n] = dist[curr] + 1
+			dist[n] = dist[curr] + randWeights[n[0]][n[1]] + 1
 
 	var _path : Array[Vector2i] = []
 	if end not in prev: return path

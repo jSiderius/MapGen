@@ -1,22 +1,20 @@
-extends "res://code/subdivide_districts_algo.gd"
+extends "res://code/grid_gen_functions.gd"
 
 var graph : Resource = preload("res://code/graph.gd")
 
 # Takes an ID array
 # Determines the set of major roads between district centers, sets them in the array, returns 
-func add_major_roads(idArray : Array) -> Array: 
+func add_roads(idArray : Array, vertices : Array[Vector2i]) -> Array: 
 
-	var dcs : Array[Vector2]
-	dcs.assign(find_district_centers(idArray).keys())
 	var roads : Array[Array] = []
-	for i in range(len(dcs)): for j in range(i+1, len(dcs)): 
-		roads.append([dcs[i], dcs[j]])
+	for i in range(len(vertices)): for j in range(i+1, len(vertices)): 
+		roads.append([vertices[i], vertices[j]])
 	
-	var g : Graph = graph.new(roads, dcs, len(idArray), len(idArray[0]))
+	var g : Graph = graph.new(roads, vertices, len(idArray), len(idArray[0]))
 	idArray = g.add_modified_mst(idArray)
 
-	for dc in dcs: 
-		idArray[dc[0]][dc[1]] = -2
+	for v in vertices: 
+		idArray[v[0]][v[1]] = -2
 
 	return idArray
 	
