@@ -74,7 +74,7 @@ func _ready() -> void:
 	# Determine major roads spanning the districts and add them to the array 
 	var dcs : Array[Vector2i]
 	dcs.assign(find_district_centers(idArray).keys())
-	idArray = add_roads(idArray, dcs)
+	idArray = add_roads(idArray, dcs, true)
 	if debug: await redraw_and_pause(10)
 
 	idArray = increase_array_resolution(idArray, 2)
@@ -85,7 +85,7 @@ func _ready() -> void:
 	for key in bbs.keys(): 
 		idArray = add_district_border(idArray, key, bbs[key])
 		idArray = get_locations_in_district(idArray, key, bbs[key])
-		return 
+		# break
 
 	if debug: await redraw_and_pause(11)
 

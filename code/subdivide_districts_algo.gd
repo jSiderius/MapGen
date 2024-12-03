@@ -75,8 +75,8 @@ func get_locations_in_district(idArray : Array, id : int, boundingBox : Array):
 			if idArray[x][y] == id: districtNodes.append(Vector2i(x,y))
 
 	var locations = select_random_items(districtNodes, floor(len(districtNodes) * 0.05))
-	for loc in locations: 
-		idArray[loc[0]][loc[1]] = -2
+	# for loc in locations: 
+		# idArray[loc[0]][loc[1]] = -2
 	add_roads(idArray, locations)
 	return idArray
 

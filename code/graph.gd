@@ -33,9 +33,11 @@ func add_edge(edge : Array[Vector2i]):
 
 # Takes edges [[Vector2, Vector2] ... ] and vertices [Vector2 ... ] defining a graph G(V,E)
 # Calculates a true MST of the graph via kruskals algorithm and returns 
-func kruskals_mst() -> Array[Array]: 
-
-	edges.sort_custom(_sort_by_length)
+func kruskals_mst(sorted : bool = false) -> Array[Array]: 
+	var _algStart : float = Time.get_ticks_msec() / 1000.0 
+	if not sorted: edges.sort_custom(_sort_by_length)
+	print("Time to sort: ", Time.get_ticks_msec() / 1000.0 - _algStart)
+	_algStart = Time.get_ticks_msec() / 1000.0
 	var sets : Dictionary = {} 
 	for v in vertices: 
 		sets[v] = [v, 0]
@@ -55,35 +57,51 @@ func kruskals_mst() -> Array[Array]:
 		
 		mst_edges.append(e)
 	
+	print("Time to find mst: ", Time.get_ticks_msec() / 1000.0 - _algStart)
 	return mst_edges
 
+func is_sparse() -> bool: 
+	return len(edges) * log(len(edges)) < len(edges) + len(vertices) * log(len(vertices))
+
 # Recursively find the head of a set
-func find_set_head(sets, v): 
+func find_set_head(sets, v) -> Vector2i: 
 	if sets[v][0] == v: return v
-	return find_set_head(sets, sets[v][0]) #Can do the log* thing but not a primary concern
-	
+	var setHead : Vector2i = find_set_head(sets, sets[v][0])
+	sets[v][0] = setHead
+	return setHead
 
 # Custom sorting function for edge array [[Vector2, Vector2] ... ]
 # Sorts [Vector2, Vector2] vs [Vector2, Vector2] based on which distance between vectors is largest 
 func _sort_by_length(a,b): 
-	var len_a : float = pow(pow(float(a[0][0]) - float(a[1][0]), 2.0) + pow(float(a[0][1]) - float(a[1][1]), 2.0), 0.5)
-	var len_b : float = pow(pow(float(b[0][0]) - float(b[1][0]), 2.0) + pow(float(b[0][1]) - float(b[1][1]), 2.0), 0.5)
+	# var len_a : float = pow(pow(float(a[0][0]) - float(a[1][0]), 2.0) + pow(float(a[0][1]) - float(a[1][1]), 2.0), 0.5)
+	# var len_b : float = pow(pow(float(b[0][0]) - float(b[1][0]), 2.0) + pow(float(b[0][1]) - float(b[1][1]), 2.0), 0.5)
+	var len_a : float = abs(a[0][0] - a[1][0]) + abs(a[0][1] - a[1][1])
+	var len_b : float = abs(b[0][0] - b[1][0]) + abs(b[0][1] - b[1][1])
 	return len_a < len_b
 
 # Takes edges [[Vector2, Vector2] ... ] and vertices [Vector2 ... ] defining a graph G(V,E)
 # Gets an MST of the graph then selects aditional edges for the tree 
 func add_modified_mst(idArray : Array, ratio = 1.8) -> Array: 
 
+	var _startTime : float = Time.get_ticks_msec() / 1000.0
 	edges.sort_custom(_sort_by_length)
+	print("Sort time: ", (Time.get_ticks_msec() / 1000.0) - _startTime)
+	_startTime = Time.get_ticks_msec() / 1000.0
 
 	var a_star_lengths : Dictionary = {} 
-	var mst : Array[Array] = kruskals_mst()
+	var mst : Array[Array] = kruskals_mst(true)
+	print("Graph is sparse: ", is_sparse())
+	print("Found MST of size ", len(mst), " with runtime ", (Time.get_ticks_msec() / 1000.0) - _startTime)
+	_startTime = Time.get_ticks_msec() / 1000.0
+	
 	subGraph = graphLoad.new(mst, vertices)
 	for edge in mst: 
 		var route : Array[Vector2i] = a_star(idArray, edge[0], edge[1])
 		idArray = positions_to_roads(idArray, route)
 		a_star_lengths[edge] = len(route)
 		a_star_lengths[[edge[1], edge[0]]] = len(route)
+	print("A* runtime: ",  (Time.get_ticks_msec() / 1000.0) - _startTime)
+	return idArray
 
 	var distPrev : Array[Dictionary] = subGraph.dijkstras_all_to_all(a_star_lengths)
 	var dist : Dictionary = distPrev[0]
