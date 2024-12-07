@@ -67,17 +67,41 @@ func add_district_border(idArray : Array, id : int, bounding_box : Array):
 					idArray[newX][newY] = -4
 	return idArray
 
-func get_locations_in_district(idArray : Array, id : int, boundingBox : Array): 
+func add_district_center(idArray : Array, id : int, bounding_box : Array, center : Vector2i, radius : float) -> Array:
+	for x in range(bounding_box[0][0], bounding_box[1][0]+1, 1):
+		for y in range(bounding_box[0][1], bounding_box[1][1]+1, 1): 
+			if idArray[x][y] not in [id, -1]: continue 
+
+			var distance : float = sqrt(pow(x - center[0], 2) + pow(y - center[1], 2))
+			if distance > radius: continue
+
+			idArray[x][y] = -2
+
+	return idArray 
+
+func get_locations_in_district(idArray : Array, id : int, boundingBox : Array, center : Vector2i, edgeBarrier : float = 3.0):
 
 	var districtNodes : Array[Vector2i] = []
+	var borderNodes : Array[Vector2i] = []
+	for x in range(boundingBox[0][0]-1, boundingBox[1][0]+2, 1):
+		for y in range(boundingBox[0][1]-1, boundingBox[1][1]+2, 1): 
+			if not bounds_check(x, y, len(idArray), len(idArray[0])): continue
+			if idArray[x][y] in [-3, -4]: borderNodes.append(Vector2i(x, y))
+
 	for x in range(boundingBox[0][0], boundingBox[1][0]+1, 1):
 		for y in range(boundingBox[0][1], boundingBox[1][1]+1, 1): 
-			if idArray[x][y] == id: districtNodes.append(Vector2i(x,y))
+			if not idArray[x][y] == id: continue
+			var valid = true
+			for b in borderNodes: 
+				if Vector2i(x, y).distance_to(b) > edgeBarrier: continue
+				valid = false 
+				break
+				
+			if valid: districtNodes.append(Vector2i(x,y))
 
 	var locations = select_random_items(districtNodes, floor(len(districtNodes) * 0.05))
-	# for loc in locations: 
-		# idArray[loc[0]][loc[1]] = -2
 	add_roads(idArray, locations)
+
 	return idArray
 
 func select_random_items(arr: Array, count: int) -> Array:
