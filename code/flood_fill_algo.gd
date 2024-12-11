@@ -1,16 +1,13 @@
 extends "res://code/expand_automata_algo.gd"
 
-# Store minUniqueID globally to track ID's over the course of the program
-var minUniqueID : int = 3
-
 # Takes an id array and an int 
 # Runs flood fill to identify the unique regions with a current ID 'replaced', replaces them with the minimum unique ID 
 func flood_fill(idArray : Array, replaced : int = 0) -> Array: 
 	
 	for x in range(len(idArray)): for y in range(len(idArray[x])): 
 		if not idArray[x][y] == replaced: continue 
-		idArray = flood_fill_solve_group(idArray, Vector2(x,y), minUniqueID, replaced)
-		minUniqueID += 1
+		idArray = flood_fill_solve_group(idArray, Vector2(x,y), MIN_UNIQUE_ID, replaced)
+		MIN_UNIQUE_ID += 1
 	
 	return idArray
 
@@ -50,8 +47,8 @@ func flood_fill_elim_inside_terrain(idArray : Array) -> Array:
 	# Replace any remaining values of '2' with a new group
 	# TODO: technically could be more than one group but haven't observed this 
 	for x in range(len(idArray)): for y in range(len(idArray[x])): 
-		if idArray[x][y] == 2: idArray[x][y] = minUniqueID
-	minUniqueID += 1
+		if idArray[x][y] == 2: idArray[x][y] = MIN_UNIQUE_ID
+	MIN_UNIQUE_ID += 1
 	
 	# Flood fill the edge group from '0' back to '2'
 	idArray = flood_fill_solve_group(idArray, Vector2(0,0), 2, 0)

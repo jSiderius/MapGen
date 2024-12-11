@@ -10,6 +10,7 @@ extends "res://code/cellular_automata_algo.gd"
 var idArray : Array = [] 
 var bbs : Dictionary = {}
 var districts : Dictionary = {} 
+var roads : Array = []
 	
 func _ready() -> void: 
 	# Initialize  variables
@@ -77,6 +78,7 @@ func _ready() -> void:
 
 	districts = districts_add_centers(idArray , districts)
 	districts = districts_add_sizes(idArray, districts)
+	districts = districts_add_percentages(idArray, districts)
 
 	var dcs : Array[Vector2i] = []
 	for key in districts: 
@@ -84,8 +86,7 @@ func _ready() -> void:
 		print(c)
 		dcs.append(c)
 	
-	print(dcs)
-	idArray = add_roads(idArray, dcs, true)
+	roads = add_roads(idArray, dcs, true, true) # DEBUGGING
 	if debug: await redraw_and_pause(10)
 
 	idArray = increase_array_resolution(idArray, 2.0)
@@ -96,27 +97,51 @@ func _ready() -> void:
 		districts[key]["center"] = Vector2i(floor(center[0] * 2.0), floor(center[1] * 2.0))
 		districts[key]["size"] *= 2
 
-	bbs  = find_district_bounding_boxes(idArray)
+	bbs  = find_district_bounding_boxes(idArray) # TODO: Add bbs to districts dict 
+	var sumPercent : float = 0.0
+
+	var sortedKeys : Array = []
+	for key in bbs.keys():
+		sortedKeys.append([key, districts[key]["size"]]) 
+	sortedKeys.sort_custom(_sort_by_second_element_reverse)
 	
-	for key in bbs.keys(): 
-		idArray = add_district_border(idArray, key, bbs[key])
+	for key in sortedKeys:
+		key = key[0] 
+		if sumPercent >= 0.7: break
+		voronoi_district(idArray, key, bbs[key])
+		sumPercent += districts[key]["sizePercent"]
+		print(sumPercent)
+		# idArray = add_district_border(idArray, key, bbs[key])
+
+	idArray = indentify_walls(idArray)
+	idArray = expand_id_array(idArray, [2, -3], true)
+		
 	if debug: await redraw_and_pause(11)
 	
 	for key in bbs.keys(): 
-		idArray = get_locations_in_district(idArray, key, bbs[key], districts[key]["center"], pow(districts[key]["size"] * 0.05 / PI, 1.0/3.0))
+		break
+		roads = get_locations_in_district(idArray, key, bbs[key], districts[key]["center"], pow(districts[key]["size"] * 0.05 / PI, 1.0/3.0))
+		
 		#TODO: Max width is probably a better metric
 	if debug: await redraw_and_pause(12)
 
 	for key in bbs.keys():
+		#break
 		idArray = add_district_center(idArray, key, bbs[key], districts[key]["center"],sqrt(districts[key]["size"] * 0.05 / PI))
+		
 
 	if debug: await redraw_and_pause(13)
 	
 func _draw() -> void: 
 	draw_from_id_grid() 
+	draw_roads()
 	for key in bbs.keys():
 		# draw_bounding_box(get_random_color(key), squareSize, 5, bbs[key][0], bbs[key][1])
 		pass
+
+func draw_roads(): 
+	for r in roads: 
+		draw_line(squareSize * Vector2(r[0][0], r[0][1]), squareSize * Vector2(r[1][0], r[1][1]), Color.BLUE, 1.0)
 
 func draw_bounding_box(col : Color, ss : float, line_width : float, first : Vector2i, second : Vector2i) -> void: 
 	# Convert the points to top-left and bottom-right for consistent rectangle rendering

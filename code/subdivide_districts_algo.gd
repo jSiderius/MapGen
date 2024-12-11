@@ -99,21 +99,7 @@ func get_locations_in_district(idArray : Array, id : int, boundingBox : Array, c
 				
 			if valid: districtNodes.append(Vector2i(x,y))
 
-	var locations = select_random_items(districtNodes, floor(len(districtNodes) * 0.05))
-	add_roads(idArray, locations)
+	var locations = select_random_items(districtNodes, 100) #floor(len(districtNodes) * 0.005)) 
+	return add_roads(idArray, locations, true, true)
 
-	return idArray
-
-func select_random_items(arr: Array, count: int) -> Array:
-	# Ensure the count doesn't exceed the size of the array
-	if count > arr.size():
-		count = arr.size()
-	
-	# Create a copy of the array to avoid modifying the original
-	var temp_arr = arr.duplicate()
-
-	# Shuffle the array
-	temp_arr.shuffle()
-	
-	# Take the first `count` items
-	return temp_arr.slice(0, count)
+	# return idArray

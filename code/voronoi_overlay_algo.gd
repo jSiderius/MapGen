@@ -10,7 +10,7 @@ func generate_voronoi_binary_id_array(width : int, height : int, num_cells=100, 
 		var w_dis : int = ceil(width * dis_from_edge_p)
 		var h_dis : int = ceil(height * dis_from_edge_p)
 		cells.append(Vector2(w_dis + randi()%(width - 2 * w_dis), h_dis + randi()% (height - 2 * h_dis)))
-	idArray = color_voronoi(idArray, cells)
+	color_voronoi(idArray, cells)
 	
 	var edge_cells : Array = find_voronoi_edge_cells(idArray)
 	idArray = clear_voronoi_edge_cells(idArray, edge_cells)
@@ -20,19 +20,23 @@ func generate_voronoi_binary_id_array(width : int, height : int, num_cells=100, 
 # Take an ID array, an array of cells (2D vectors in the bounds of ID array), and p representing the root for the distance function
 # p=1 -> manhattan distance, p=2 -> euclidean distance, ... 
 # Set the value of each (x,y) in idArray to the index value of the closest cell, return idArray
-func color_voronoi(idArray : Array, cells : Array, p=1) -> Array: 
+func color_voronoi(idArray : Array, cells : Array, p=1): 
 	for x in range(len(idArray)): for y in range(len(idArray[x])): 
-		var minIndex : int = 0
-		var minDistance : float = 100000
-		for i in range(len(cells)): 
-			var distance : float = pow( pow(abs(x - cells[i].x), p) + pow(abs(y - cells[i].y), p), 1.0/p)
-			if distance < minDistance:
-				minIndex = i 
-				minDistance = distance
-				
-		idArray[x][y] = minIndex + 1
+		color_voronoi_single(idArray, cells, Vector2i(x, y), p)
+
+func color_voronoi_single(idArray : Array, cells : Array, pos : Vector2i, p : float=1, idBoost : int = 0, border : bool = false, borderThreshold : float = 1.0, borderOnly : bool = false): 
+	var minIndex : int = idBoost
+	var minDistance : float = 1000000.0
+	# var minDistanceSecond : float = 1000000.0
+	for i in range(len(cells)):
+		var distance : float = pow( pow(abs(pos.x - cells[i].x), p) + pow(abs(pos.y - cells[i].y), p), 1.0/p)
+		if distance < minDistance:
+			minIndex = i 
+			# minDistanceSecond = minDistance
+			minDistance = distance
 	
-	return idArray
+	# if border and abs(minDistance - minDistanceSecond) <= borderThreshold: idArray[pos.x][pos.y] = -4
+	idArray[pos.x][pos.y] = minIndex + 1
 	
 # Takes an ID array
 # Returns an array of every unique edge cell value
@@ -69,3 +73,43 @@ func clear_id_array_by_binary_id_array(idArray : Array, binaryIDArray : Array) -
 	for x in range(len(idArray)): for y in range(len(idArray[x])): 
 		idArray[x][y] = 2 if binaryIDArray[x][y]==0 else idArray[x][y]
 	return idArray 
+
+# COMPARTMENTALIZE
+func voronoi_district(idArray : Array, id : int, boundingBox : Array): 
+	var districtNodes : Array[Vector2i] = []
+	var voronoiRepresentation : Array = idArray.duplicate(true)
+
+	for x in range(boundingBox[0][0], boundingBox[1][0]+1, 1):
+		for y in range(boundingBox[0][1], boundingBox[1][1]+1, 1): 
+			if idArray[x][y] == id: districtNodes.append(Vector2i(x,y))
+
+	var locations = select_random_items(districtNodes, floor(len(districtNodes) * 0.005))
+
+	for x in range(boundingBox[0][0], boundingBox[1][0]+1, 1):
+		for y in range(boundingBox[0][1], boundingBox[1][1]+1, 1): 
+			if idArray[x][y] != id: continue
+			color_voronoi_single(voronoiRepresentation, locations, Vector2i(x, y), 5.0)
+	
+	for x in range(boundingBox[0][0], boundingBox[1][0]+1, 1):
+		for y in range(boundingBox[0][1], boundingBox[1][1]+1, 1): 
+			if idArray[x][y] != id: continue
+
+			var count : int = 0
+			var border : bool = false
+			for n in neighbors:
+				var newX : int = x + n[0]
+				var newY : int = y + n[1]
+
+				if not bounds_check(newX, newY, len(voronoiRepresentation), len(voronoiRepresentation[0])): continue
+				if idArray[newX][newY] == -4: count += 1
+				var district_border : bool = idArray[newX][newY] > 2 and idArray[newX][newY] != id
+				var voronoi_border : bool = voronoiRepresentation[newX][newY] != voronoiRepresentation[x][y] and x <= newX and y <= newY
+				if district_border or voronoi_border: 
+					idArray[x][y] = -4
+					border = true 
+
+			#if border and count <= 4: idArray[x][y] = -4
+
+
+	
+	MIN_UNIQUE_ID += len(locations)

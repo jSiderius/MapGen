@@ -16,6 +16,9 @@ var four_neighbors : Array = [
 	
 var pqLoad : Resource = preload("res://code/priority_queue.gd")
 
+# Store minUniqueID globally to track ID's over the course of the program
+var MIN_UNIQUE_ID : int = 3
+
 # Takes position (x (int), y (int)) and x max (int), y max (int)
 # Returns if (x, y) is on the edge of the constraints
 func is_edge(x : int, y : int, boundX : int, boundY : int) -> bool:
@@ -80,6 +83,19 @@ func districts_add_sizes(idArray : Array, districts : Dictionary) -> Dictionary:
 		districts[val]["size"] += 1
 
 	return districts
+
+func districts_add_percentages(idArray : Array, districts : Dictionary) -> Dictionary: 
+	var totalSize : int = 0
+	for key in districts.keys(): 
+		if "size" not in districts[key]: districts = districts_add_sizes(idArray, districts)
+		totalSize += districts[key]["size"]
+	
+	for key in districts.keys():
+		districts[key]["sizePercent"] = float(districts[key]["size"]) / float(totalSize)
+
+	return districts
+
+
 
 # Takes an ID array
 # Calculates the center of mass for each district and returns the coords as the key's of a dictionary leading to the district ID 
@@ -150,6 +166,9 @@ func scan_at_depth(idArray : Array, pos : Vector2, depth : int, ttl = 1) -> Arra
 func _sort_by_second_element(a, b):
 	return a[1] < b[1]
 
+func _sort_by_second_element_reverse(a, b):
+	return a[1] > b[1]
+
 var startTime : String = Time.get_datetime_string_from_system()
 var path = "/Users/joshsiderius/Desktop/GodotSS/%s" % [startTime]
 var first = true 
@@ -168,3 +187,16 @@ func take_screenshot():
 	var file_path = "/Users/joshsiderius/Desktop/GodotSS/%s/%d.png" % [startTime, Time.get_ticks_usec()]
 	var _error = screenshot.save_png(file_path)
 	
+func select_random_items(arr: Array, count: int) -> Array:
+	# Ensure the count doesn't exceed the size of the array
+	if count > arr.size():
+		count = arr.size()
+	
+	# Create a copy of the array to avoid modifying the original
+	var temp_arr = arr.duplicate()
+
+	# Shuffle the array
+	temp_arr.shuffle()
+	
+	# Take the first `count` items
+	return temp_arr.slice(0, count)

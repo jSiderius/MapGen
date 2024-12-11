@@ -25,7 +25,7 @@ func check_graph():
 		if not (edge[0] in vertices and edge[1] in vertices): return false
 	return true
 
-func add_edge(edge : Array[Vector2i]): 
+func add_edge(edge : Array): 
 	edges.append(edge)
 
 # Takes edges [[Vector2, Vector2] ... ] and vertices [Vector2 ... ] defining a graph G(V,E)
@@ -57,7 +57,7 @@ func get_mst(_sorted : bool = false) -> Array[Array]:
 
 # Takes edges [[Vector2, Vector2] ... ] and vertices [Vector2 ... ] defining a graph G(V,E)
 # Gets an MST of the graph then selects aditional edges for the tree 
-func add_modified_mst(idArray : Array, ratio = 1.8) -> Array: 
+func add_modified_mst(idArray : Array, ratio = 1.8, mod : bool = true) -> Array[Array]: 
 	var a_star_lengths : Dictionary = {} 
 	var mst : Array[Array] = get_mst()
 
@@ -67,7 +67,8 @@ func add_modified_mst(idArray : Array, ratio = 1.8) -> Array:
 		idArray = positions_to_roads(idArray, route)
 		a_star_lengths[edge] = len(route)
 		a_star_lengths[[edge[1], edge[0]]] = len(route)
-	return idArray
+	
+	if not mod: return idArray #TODO: this is temp
 
 	var distPrev : Array[Dictionary] = subGraph.dijkstras_all_to_all(a_star_lengths)
 	var dist : Dictionary = distPrev[0]
@@ -99,6 +100,70 @@ func add_modified_mst(idArray : Array, ratio = 1.8) -> Array:
 			prev[[edge[1], v]] = distPrevE2[1][v]
 		
 	return idArray
+
+func add_modified_mst2(idArray : Array) -> Array: 
+	
+	# var mst : Array[Array] = get_mst()
+	var empty : Array[Array] = []
+	edges.sort_custom(_sort_by_length)
+	# edges = edges.slice(0, floor(len(edges) / 5.0))
+	subGraph = graphLoad.new(empty, vertices)
+	
+	var i : int = 0 
+	for _e in edges:
+		i += 1 
+		print(i, " / ", len(edges)) 
+		var e : Array[Vector2i]
+		e.assign(_e) # Godot needs nested static typing I'm going to lose my mind
+		if e in subGraph.edges or subGraph.intersects(e): continue
+		subGraph.add_edge(e)
+	
+	for edge in subGraph.edges: 
+		var route : Array[Vector2i] = a_star(idArray, edge[0], edge[1])
+		idArray = positions_to_roads(idArray, route)
+	
+	# return subGraph.edges
+	return []
+	# TODO: Set self to subgraph? 
+
+const EPSILON = 1e-7
+#Precompute edges equations and add to dict to minimize comp
+# https://www.cuemath.com/geometry/intersection-of-two-lines/
+func intersects(checkEdge : Array[Vector2i]) -> bool: 
+	var line1 : Array = standardEquationOfLine(checkEdge[0], checkEdge[1])
+	var a1 = line1[0]
+	var b1 = line1[1]
+	var c1 = line1[2]
+	
+	for _e in edges: 
+		var e : Array[Vector2i]
+		e.assign(_e)
+		if checkEdge[0] in e or checkEdge[1] in e: continue
+
+		var line2 : Array = standardEquationOfLine(e[0], e[1])
+		var a2 = line2[0]
+		var b2 = line2[1]
+		var c2 = line2[2]
+		if abs(a1*b2 - a2*b1) < EPSILON: 
+		# if a1*b2 == a2*b1: e
+			if abs((c1 / c2) - (a1 / a2)) < EPSILON: return true
+		var intersection : Vector2 = Vector2((c1*a2 - c2*a1) / (a1*b2 - a2*b1), (b1*c2 - b2*c1) / (a1*b2-a2*b1))
+		if pointInBoundingBox(checkEdge[0], checkEdge[1], intersection) and pointInBoundingBox(e[0], e[1], intersection): 
+			return true
+	return false
+
+func pointInBoundingBox(b1 : Vector2, b2 : Vector2, p : Vector2) -> bool: 
+	var minBounding = Vector2(min(b1.x, b2.x), min(b1.y, b2.y))
+	var maxBounding = Vector2(max(b1.x, b2.x), max(b1.y, b2.y))
+	
+	return p.x >= minBounding.x and p.x <= maxBounding.x and p.y >= minBounding.y and p.y <= maxBounding.y
+
+# Returns [a, b, c] as in ay + bx + c = 0
+func standardEquationOfLine(p1 : Vector2i, p2 : Vector2i) -> Array[float]: 
+	if p1[0] == p2[0]: return [0, -1, p1[0]]
+	var m : float = float(p1[1] - p2[1]) / float(p1[0] - p2[0]) 
+	var b : float = p1[1] - m*p1[0]
+	return [1, -m, -b]
 
 func is_sparse() -> bool: 
 	return len(edges) * log(len(edges)) < len(edges) + len(vertices) * log(len(vertices))
