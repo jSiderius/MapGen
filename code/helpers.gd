@@ -1,17 +1,17 @@
 extends Control
 
 # Array of neighboring positions that is iterated over in several algorithms 
-var neighbors : Array = [
-		Vector2(-1,-1), Vector2(0,-1), Vector2(1,-1),
-		Vector2(-1,0),                 Vector2(1,0),
-		Vector2(-1,1), Vector2(0,1)  , Vector2(1,1)
+var neighbors : Array[Vector2i] = [
+		Vector2i(-1,-1), Vector2i(0,-1), Vector2i(1,-1),
+		Vector2i(-1,0),                 Vector2i(1,0),
+		Vector2i(-1,1), Vector2i(0,1)  , Vector2i(1,1)
 	]
 
 # Array of non-diagonal neighboring positions that is iterated over in several algorithms 
-var four_neighbors : Array = [
-					   Vector2(0,-1), 
-		Vector2(-1,0),                 Vector2(1,0),
-					   Vector2(0,1)
+var four_neighbors : Array[Vector2i] = [
+					   Vector2i(0,-1), 
+		Vector2i(-1,0),                 Vector2i(1,0),
+					   Vector2i(0,1)
 	]
 	
 var pqLoad : Resource = preload("res://code/priority_queue.gd")
@@ -52,7 +52,7 @@ func get_random_color(_seed : int) -> Color:
 	var g = (_seed * 2345678) % 256 / 255.0  # Random green value
 	var b = (_seed * 3456789) % 256 / 255.0  # Random blue value
 	
-	return Color(r, g, b, 0.6)
+	return Color(0, g, b, 1.0)
 
 
 var lastExitTime : float = 0.0 
@@ -65,87 +65,6 @@ func redraw_and_pause(alg : int, stall : float = 1.0, screenshot = true) -> void
 	if screenshot: take_screenshot()
 	print("\t exit redraw_and_pause()")
 	lastExitTime = Time.get_ticks_msec() / 1000.0
-
-func get_districts_dict_empty(idArray : Array) -> Dictionary: 
-	var districtsDict = {} 
-	for row in idArray: for val in row:
-		if val <= 2: continue 
-		if val not in districtsDict: 
-			districtsDict[val] = {}
-	return districtsDict
-
-func districts_add_sizes(idArray : Array, districts : Dictionary) -> Dictionary: 
-	for key in districts.keys(): 
-		districts[key]["size"] = 0
-
-	for row in idArray: for val in row:
-		if val <= 2 or val not in districts: continue
-		districts[val]["size"] += 1
-
-	return districts
-
-func districts_add_percentages(idArray : Array, districts : Dictionary) -> Dictionary: 
-	var totalSize : int = 0
-	for key in districts.keys(): 
-		if "size" not in districts[key]: districts = districts_add_sizes(idArray, districts)
-		totalSize += districts[key]["size"]
-	
-	for key in districts.keys():
-		districts[key]["sizePercent"] = float(districts[key]["size"]) / float(totalSize)
-
-	return districts
-
-
-
-# Takes an ID array
-# Calculates the center of mass for each district and returns the coords as the key's of a dictionary leading to the district ID 
-func districts_add_centers(idArray : Array, districts) -> Dictionary: 
-	
-
-	var helperDict : Dictionary = {}
-	# Dictionary from group ID (int, key) to [sum all x coords (int), sum all y coords (int), count of nodes in group (int), backup value (Vector2)] (Array, value)
-	for x in range(len(idArray)): for y in range(len(idArray[x])): 
-
-		# Get and screen value
-		var val : int = idArray[x][y]
-		if val <= 2: continue 
-		if val not in helperDict: 
-			helperDict[val] = [x, y, 1, Vector2(x,y)]
-			continue
-		
-		# Update the dict
-		helperDict[val][0] += x
-		helperDict[val][1] += y
-		helperDict[val][2] += 1
-	
-	for key in districts.keys():
-		if key not in helperDict: continue
-
-		# Calculate center
-		var center_x = floor(helperDict[key][0] / helperDict[key][2])
-		var center_y = floor(helperDict[key][1] / helperDict[key][2])
-		
-		# If the center of mass is not in the group use a backup #TODO: improve backup selection
-		if idArray[center_x][center_y] != key: 
-			districts[key]["center"] = helperDict[key][3]
-			continue
-		
-		# Set value in dict 
-		districts[key]["center"] = Vector2(center_x, center_y)
-
-	return districts
-
-# Takes an ID array 
-# Compiles and returns a dictionary representing all groups in the array
-func get_groups_dict(idArray : Array) -> Dictionary: 
-	var groups_dict = {} 
-	for row in idArray: for val in row:
-		if val <= 2: continue 
-		if val not in groups_dict: 
-			groups_dict[val] = 1
-			continue
-		groups_dict[val]+=1
-	return groups_dict
 
 func scan_at_depth(idArray : Array, pos : Vector2, depth : int, ttl = 1) -> Array[int]: 
 	if ttl == 0: return []

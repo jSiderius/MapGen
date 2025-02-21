@@ -1,115 +1,242 @@
 extends "res://code/reduction_algos.gd"
 
-# Takes ints representing width and height of the resulting array and num_cells representing the number of random voronoi cells
-# Generates num_cells voronoi cells randomly and returns a array with the cell ID if it is not an edge cell and 0 otherwise
-func generate_voronoi_binary_id_array(width : int, height : int, num_cells=100, dis_from_edge_p : float = 0.05) -> Array: 
-	var idArray : Array = generate_empty_id_array(width, height)
+func generate_id_array_with_voronoi_cells(width : int, height : int, num_cells : int = 100, min_dist_from_edge_percent : float = 0.05) -> Array:
+	'''
+		Purpose: 
+			Generate an ID grid where each ID is set to the value of the nearest randomly generated voronoi point
+
+		Args: 
+			width: 
+				Width of the new ID grid
+			height: 
+				Height of the new ID grid
+			num_cells: 
+				Number of randomly generated voronoi cells
+			min_dist_from_edge_percent: 
+				The minimum distance a voroni cells can be from any edge as a percentage of the size of the grid
+
+		Returns:
+			Array: The generated array 
+	'''
+
+	var id_grid : Array = generate_empty_id_array(width, height)
+
+	# Create a vector representing the interger distance a voronoi cell should be from the edge
+	var buffer_zone : Vector2i = Vector2i(ceil(width * min_dist_from_edge_percent), ceil(height * min_dist_from_edge_percent))
+	# TODO: Validate the buffer zone
 	
-	var cells : Array = []
+	var cells : Array[Vector2i] = []
+
+	# Randomly generate the cell locations
 	for i in range(num_cells): 
-		var w_dis : int = ceil(width * dis_from_edge_p)
-		var h_dis : int = ceil(height * dis_from_edge_p)
-		cells.append(Vector2(w_dis + randi()%(width - 2 * w_dis), h_dis + randi()% (height - 2 * h_dis)))
-	color_voronoi(idArray, cells)
+		cells.append(Vector2i(buffer_zone.x + randi()%(width - 2 * buffer_zone.x), buffer_zone.y + randi()% (height - 2 * buffer_zone.y)))
 	
-	var edge_cells : Array = find_voronoi_edge_cells(idArray)
-	idArray = clear_voronoi_edge_cells(idArray, edge_cells)
+	# Determine each point in the grids value based on the vornoi cell locations
+	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
+		id_grid[x][y] = get_position_id_by_voronoi_cell_locations(cells, Vector2i(x, y)) + 1
+
+	return id_grid
+
+
+func get_position_id_by_voronoi_cell_locations(cells : Array[Vector2i], pos : Vector2i, p : float=1) -> int: 
+	'''
+		Purpose:
+			Determine the closest of an array of positions (representing Voronoi cells) to a single passed position 
+
+		Args:
+			cells: 
+				An array of vectors representing voronoi cell locations
+			pos: 
+				A single position vector, for which we want to determine the nearest position in 'cells'
+			p: 
+				The root for the distance functions. p=1 -> manhattan distance, p=2 -> euclidean distance, ... 
+				
+		Returns: 
+			int: The index of the nearest vector to 'pos' in 'cells' 
+	'''
 	
-	return idArray
-
-# Take an ID array, an array of cells (2D vectors in the bounds of ID array), and p representing the root for the distance function
-# p=1 -> manhattan distance, p=2 -> euclidean distance, ... 
-# Set the value of each (x,y) in idArray to the index value of the closest cell, return idArray
-func color_voronoi(idArray : Array, cells : Array, p=1): 
-	for x in range(len(idArray)): for y in range(len(idArray[x])): 
-		color_voronoi_single(idArray, cells, Vector2i(x, y), p)
-
-func color_voronoi_single(idArray : Array, cells : Array, pos : Vector2i, p : float=1, idBoost : int = 0, border : bool = false, borderThreshold : float = 1.0, borderOnly : bool = false): 
-	var minIndex : int = idBoost
-	var minDistance : float = 1000000.0
-	# var minDistanceSecond : float = 1000000.0
+	var min_index : int = 0
+	var min_distance : float = 1000000.0
 	for i in range(len(cells)):
-		var distance : float = pow( pow(abs(pos.x - cells[i].x), p) + pow(abs(pos.y - cells[i].y), p), 1.0/p)
-		if distance < minDistance:
-			minIndex = i 
-			# minDistanceSecond = minDistance
-			minDistance = distance
-	
-	# if border and abs(minDistance - minDistanceSecond) <= borderThreshold: idArray[pos.x][pos.y] = -4
-	idArray[pos.x][pos.y] = minIndex + 1
-	
-# Takes an ID array
-# Returns an array of every unique edge cell value
-func find_voronoi_edge_cells(idArray : Array) -> Array:
-	 
-	var edge_cells : Array = []
-	for x in range(len(idArray)): for y in range(len(idArray[x])): 
-		var val : int = idArray[x][y]
-		if is_edge(x, y, len(idArray), len(idArray[x])) and not val in edge_cells: edge_cells.append(val)
-	
-	return edge_cells
 
-# Takes an ID array and an array of id's
-# Set's every (x, y) cell with a value in edge_cells to 0
-func clear_voronoi_edge_cells(idArray : Array, edge_cells : Array) -> Array: 
-	for x in range(len(idArray)): for y in range(len(idArray[x])): 
-		if idArray[x][y] in edge_cells: 
-			idArray[x][y] = 0
+		# Calculate the distance from 'pos' to the ith cell
+		var distance : float = pow( pow(abs(pos.x - cells[i].x), p) + pow(abs(pos.y - cells[i].y), p), 1.0/p)
+		if distance > min_distance: continue
+		
+		# Update the ith cell as the new minimum cell if it's distance is less than all previous cells
+		min_index = i 
+		min_distance = distance
+	
+	return min_index
+	
+func find_unique_edge_cell_ids(id_grid : Array) -> Array:
+	'''
+		Purpose: 
+			Determine the set of all IDs in the grid which border the edge
+		
+		Args: 
+			id_grid: The grid to determine the output set from 
+
+		Returns: 
+			Array: Set of all IDs in 'id_grid' which border the edge
+	'''
+
+	var edge_cell_ids : Array = []
+
+	# Check every value in the 2D array
+	for x in range(len(id_grid)): for y in range(len(id_grid[x])): #TODO: iterate only edge cells, put this in a function maybe
+		var cell_id : int = id_grid[x][y]
+
+		# Check if the cell is an edge cell and the cell's ID is not already in the set 
+		if is_edge(x, y, len(id_grid), len(id_grid[x])) and not cell_id in edge_cell_ids: #TODO: probably some more intuitvie way to clear this as a set like a dict
+			edge_cell_ids.append(cell_id)
+	
+	return edge_cell_ids
+
+# TODO: Holding off on docs for this because if I use it again I'll probably override with some modular way to select right, left, up, down, and corners
+func find_unique_rightside_border_cell_ids(id_grid : Array, trials : int = 1) -> Array:
+	'''
+		Purpose: 
+
+		Args: 
+		
+		Returns: 
+	'''
+
+	var edgeCells : Array = []
+	for x in range(len(id_grid)): for y in range(len(id_grid[x])): #TODO: See 'TODO' in find_unique_edge_cell_ids
+		var cell_id : int = id_grid[x][y]
+
+		# Check if the cell is adjacent to the right edge and the cell's ID is not already in the set
+		if x + 1 == len(id_grid) and cell_id not in edgeCells: 
+			edgeCells.append(cell_id)
+
+	# Extend the depth ie. trials = 2 is border or bordering a border, ...
+	# TODO: refactor and/or document for
+	for i in range(trials - 1): 
+		var edgeCellsNext : Array = []
+		for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
+			for n in four_neighbors: 
+				var newX : int = x + n[0]
+				var newY : int = y + n[1]
+
+				if not bounds_check(newX, newY, len(id_grid), len(id_grid[x])): continue
+				if id_grid[newX][newY] in edgeCells and id_grid[newX][newY] not in edgeCellsNext: 
+					edgeCellsNext.append(id_grid[newX][newY])
+		edgeCells.append_array(edgeCellsNext)
+		
+	return edgeCells
+
+func overwrite_cells_by_id(id_grid : Array, ids_to_overwrite : Array, new_cell_id : int = 0) -> Array: 
+	'''
+		Purpose: 
+			Overwrites all cells in a 2D grid which are designated to be overwritten with a passed value
+
+		Args: 
+			id_grid: 
+				The 2D grid
+			id_to_overwrite: 
+				The ids in 'id_grid' which will be set to the new override value
+			new_cell_id: 
+				The new override value
+
+		Returns:
+			Array: 'id_grid' manipulated according to the function
+	'''
+
+	# Iterate all cells in the 2d array
+	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
+
+		# If a cells ID is in ids_to_overwrite, set its new id as new_cell_id
+		if id_grid[x][y] in ids_to_overwrite: 
+			id_grid[x][y] = new_cell_id
 			
-	return idArray
+	return id_grid
+
+func copy_designated_ids(from_grid : Array, to_grid : Array, ids_to_copy : Array) -> Array:
+	'''
+		Purpose:
+			Copy any cell with a designated ID from 'from_grid' to 'to_grid'
+
+		Args: 
+			from_grid: 
+				The array to be copied from
+			to_grid:
+				The array to copy to
+			ids_to_copy: 
+				The array of ID's which should be copied (ID's not in set will be retain their value in 'to_grid')
+
+		Returns:
+			Array: 'to_grid' manipulated according to the function 
+	'''
+
+	# Exit the function if the arrays have different shapes
+	if not len(from_grid) == len(to_grid) or not len(from_grid[0]) == len(to_grid[0]): return to_grid
+
+	# Iterate all cells in the 2D grid(s)
+	for x in range(len(to_grid)): for y in range(len(to_grid[x])):
+
+		# If the ID in 'from_grid' is in 'ids_to_copy' set the ID in 'to_grid' to that value
+		if from_grid[x][y] in ids_to_copy: 
+			to_grid[x][y] = from_grid[x][y]
+	
+	return to_grid
 
 # Takes an ID array 
 # Check if any exterior nodes (2) should be border nodes (1 ... changes to -3 at later point)
-func enforce_border(idArray : Array) -> Array:
-	for x in range(len(idArray)): for y in range(len(idArray[x])): 
-		if idArray[x][y] != 2 or is_edge(x, y, len(idArray), len(idArray[x])): continue
-		for n in neighbors:	
-			if idArray[x + n[0]][y + n[1]] > 2: idArray[x][y] = 1
-	return idArray
+func enforce_border(id_grid : Array) -> Array:
+	'''
+		Purpose: 
 
-# Takes an ID array and a binary ID array (1's and 0's) of equal dimensions 
-# Erases the value in idArray if the value in binaryIDArray is 0 (sets val to 2 which represents null space)
-func clear_id_array_by_binary_id_array(idArray : Array, binaryIDArray : Array) -> Array: 
-	for x in range(len(idArray)): for y in range(len(idArray[x])): 
-		idArray[x][y] = 2 if binaryIDArray[x][y]==0 else idArray[x][y]
-	return idArray 
+		Args: 
+		
+		Returns: 
+	'''
+
+	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
+		if id_grid[x][y] != 2 or is_edge(x, y, len(id_grid), len(id_grid[x])): continue
+		for n in neighbors:	
+			if id_grid[x + n[0]][y + n[1]] > 2: id_grid[x][y] = 1
+	return id_grid
+
 
 # COMPARTMENTALIZE
-func voronoi_district(idArray : Array, id : int, boundingBox : Array): 
+func voronoi_district(id_grid : Array, id : int, boundingBox : Array): 
+	'''
+		Purpose: 
+
+		Args: 
+		
+		Returns: 
+	'''
+
 	var districtNodes : Array[Vector2i] = []
-	var voronoiRepresentation : Array = idArray.duplicate(true)
+	var voronoiRepresentation : Array = id_grid.duplicate(true)
 
 	for x in range(boundingBox[0][0], boundingBox[1][0]+1, 1):
 		for y in range(boundingBox[0][1], boundingBox[1][1]+1, 1): 
-			if idArray[x][y] == id: districtNodes.append(Vector2i(x,y))
+			if id_grid[x][y] == id: districtNodes.append(Vector2i(x,y))
 
 	var locations = select_random_items(districtNodes, floor(len(districtNodes) * 0.005))
 
 	for x in range(boundingBox[0][0], boundingBox[1][0]+1, 1):
 		for y in range(boundingBox[0][1], boundingBox[1][1]+1, 1): 
-			if idArray[x][y] != id: continue
-			color_voronoi_single(voronoiRepresentation, locations, Vector2i(x, y), 5.0)
+			if id_grid[x][y] != id: continue
+			# get_position_id_by_voronoi_cell_locations(voronoiRepresentation, locations, Vector2i(x, y), 5.0, )
+			# TODO: ??? 
 	
 	for x in range(boundingBox[0][0], boundingBox[1][0]+1, 1):
 		for y in range(boundingBox[0][1], boundingBox[1][1]+1, 1): 
-			if idArray[x][y] != id: continue
+			if id_grid[x][y] != id: continue
 
-			var count : int = 0
-			var border : bool = false
 			for n in neighbors:
 				var newX : int = x + n[0]
 				var newY : int = y + n[1]
 
 				if not bounds_check(newX, newY, len(voronoiRepresentation), len(voronoiRepresentation[0])): continue
-				if idArray[newX][newY] == -4: count += 1
-				var district_border : bool = idArray[newX][newY] > 2 and idArray[newX][newY] != id
+				var district_border : bool = id_grid[newX][newY] > 2 and id_grid[newX][newY] != id
 				var voronoi_border : bool = voronoiRepresentation[newX][newY] != voronoiRepresentation[x][y] and x <= newX and y <= newY
 				if district_border or voronoi_border: 
-					idArray[x][y] = -4
-					border = true 
-
-			#if border and count <= 4: idArray[x][y] = -4
-
-
+					id_grid[x][y] = -4
 	
-	MIN_UNIQUE_ID += len(locations)
+	# MIN_UNIQUE_ID += len(locations)

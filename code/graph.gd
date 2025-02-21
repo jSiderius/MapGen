@@ -253,22 +253,22 @@ func a_star(idArray : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i
 
 		for n in four_neighbors:
 	# 		# Get and screen neighbor  
-			n = Vector2i(n[0]+curr[0], n[1]+curr[1])
-			if not bounds_check(int(n[0]), int(n[1]), len(idArray), len(idArray[0])): continue
+			n = Vector2i(n.x+curr[0], n.y+curr[1])
+			if not bounds_check(int(n.x), int(n.y), len(idArray), len(idArray[0])): continue
 			if n == end:
 				prev[end] = curr
 				dist[end] = dist[curr] + 1
 				break
 
-			var g_n : float = 1 + randWeights[n[0]][n[1]]
-			var h_n = abs(n[0] - end[0]) + abs(n[1] - end[1]) 
+			var g_n : float = 1 + randWeights[n.x][n.y]
+			var h_n = abs(n.x - end.x) + abs(n.y - end.y) 
 			var f_n = g_n + h_n
 
 			if n in dist and dist[n] <= dist[curr]+g_n: continue  
 
 			pq.insert_or_reduce(n, f_n)
 			prev[n] = curr 
-			dist[n] = dist[curr] + randWeights[n[0]][n[1]] + 1
+			dist[n] = dist[curr] + randWeights[n.x][n.y] + 1
 
 	var _path : Array[Vector2i] = []
 	if end not in prev: return path
@@ -286,10 +286,11 @@ func init_rand_weights(idArray : Array):
 		for y in range(len(idArray[x])): 
 			# Random weighting 
 			randWeights[x].append(randf_range(0, 3))
+			# randWeights[x].append(0)
 
 			# Large weighting for city border 
-			if idArray[x][y] == -3: 
-				randWeights[x][y] += 10000
+			# if idArray[x][y] == -3: 
+				# randWeights[x][y] += 10000
 
 func positions_to_roads(idArray : Array, route : Array[Vector2i]) -> Array: 
 	for node in route: 

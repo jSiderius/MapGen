@@ -1,31 +1,9 @@
 extends "res://code/major_roads_algo.gd"
 
 # INCOMPLETE: Will have to somehow subdivide the districts such that one node is now 4
-func subdivide_district(idArrayArg : Array, bb : Array, key : int) -> Array: 
+func subdivide_district(idArrayArg : Array, bb : Array, _key : int) -> Array: 
 	var sub_array : Array = get_array_between(bb[0], bb[1], idArrayArg)
-	print(key)
 	return sub_array
-
-# Takes an ID array 
-# Returns a dictionary from group id (key) to bounding box (value)
-func find_district_bounding_boxes(idArray : Array) -> Dictionary:
-	var groups_dict : Dictionary = {} 
-	for x in range(len(idArray)): for y in range(len(idArray[x])): 
-	
-		# Get and screen the value 
-		var val : int = idArray[x][y]
-		if val <= 2: continue
-		if val not in groups_dict: 
-			groups_dict[val] = [Vector2(x,y), Vector2(x,y)]
-			continue 
-		
-		# If the value is outside the current bounding box expand the box
-		groups_dict[val][0][0] = groups_dict[val][0][0] if groups_dict[val][0][0] < x else x 
-		groups_dict[val][0][1] = groups_dict[val][0][1] if groups_dict[val][0][1] < y else y 
-		groups_dict[val][1][0] = groups_dict[val][1][0] if groups_dict[val][1][0] > x else x 
-		groups_dict[val][1][1] = groups_dict[val][1][1] if groups_dict[val][1][1] > y else y 
-
-	return groups_dict
 
 # Takes 2 vectors (Vector2) and an ID array 
 # Returns a 2D array of all values between the vectors in the ID array
@@ -79,7 +57,7 @@ func add_district_center(idArray : Array, id : int, bounding_box : Array, center
 
 	return idArray 
 
-func get_locations_in_district(idArray : Array, id : int, boundingBox : Array, center : Vector2i, edgeBarrier : float = 3.0):
+func get_locations_in_district(idArray : Array, id : int, boundingBox : Array, edgeBarrier : float = 3.0):
 
 	var districtNodes : Array[Vector2i] = []
 	var borderNodes : Array[Vector2i] = []
@@ -100,6 +78,20 @@ func get_locations_in_district(idArray : Array, id : int, boundingBox : Array, c
 			if valid: districtNodes.append(Vector2i(x,y))
 
 	var locations = select_random_items(districtNodes, 100) #floor(len(districtNodes) * 0.005)) 
-	return add_roads(idArray, locations, true, true)
+	return add_roads(idArray, locations, true)
 
 	# return idArray
+
+func select_central_district(districts : Dictionary, percentMax : float = 0.2, percentMin : float = 0.01, depth : int = 1) -> int: 
+	var keys = sorted_district_keys(districts, "disToCenter")
+	for key in keys: 
+		if not districts[key]["windowBorder"]["any"]: return key
+	return keys.pick_random()
+
+func replace_ID(idArray : Array, elimID : int, replacementID : int) -> void: 
+	for x in range(len(idArray)): for y in range(len(idArray[x])): 
+		if idArray[x][y] != elimID: continue 
+		idArray[x][y] = replacementID
+	
+
+	
