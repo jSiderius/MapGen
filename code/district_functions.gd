@@ -10,7 +10,7 @@ func get_districts_dict(idArray : Array) -> Dictionary:
 	return districts
 
 func get_districts_dict_empty(idArray : Array) -> Dictionary: 
-	var districtsDict = {} 
+	var districtsDict = {}
 	for row in idArray: for val in row:
 		if val <= 2: continue 
 		if val not in districtsDict: 

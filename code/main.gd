@@ -7,10 +7,15 @@ extends "res://code/cellular_automata_algo.gd"
 @export var threshold : float = 0.01
 
 # Needs to be global for _draw()
-var idArray : Array = [] 
+var id_grid : Array = [] 
 var bbs : Dictionary = {}
 var districts : Dictionary = {} 
 var roads : Array = []
+
+var district_flag_struct_loader : Resource = preload("res://code/Districts/district_data_flags_struct.gd")
+var district_manager_loader : Resource = preload("res://code/Districts/district_manager.gd")
+var district_flag_struct : DistrictDataFlagStruct
+var district_manager : DistrictManager
 
 
 func _ready() -> void: 
@@ -32,54 +37,56 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(0, 0.0, false)
 
 	# Fill the initial grid
-	idArray = generate_random_grid(width, height, true)
+	id_grid = generate_random_grid(width, height, true)
 	if debug: await redraw_and_pause(1, 0.1)
 	
-	# Create a voronoi cell map, and clear cells from idArray that correspond to voronoi edge cells, creating a city outline
+	# Create a voronoi cell map, and clear cells from id_grid that correspond to voronoi edge cells, creating a city outline
 	var voronoi_id_array : Array = generate_id_array_with_voronoi_cells(width, height, 100)
-	var edge_cell_ids : Array = find_unique_edge_cell_ids(voronoi_id_array) # var edge_cell_ids : Array = find_unique_rightside_border_cell_ids(idArray, 2) # TODO: Decide if this is necessary / will be used long term, if so create some kind of argument to abstract which borders will be chosen
+	var edge_cell_ids : Array = find_unique_edge_cell_ids(voronoi_id_array) # var edge_cell_ids : Array = find_unique_rightside_border_cell_ids(id_grid, 2) # TODO: Decide if this is necessary / will be used long term, if so create some kind of argument to abstract which borders will be chosen
 	voronoi_id_array = overwrite_cells_by_id(voronoi_id_array, edge_cell_ids, 2)
-	idArray = copy_designated_ids(voronoi_id_array, idArray, [2])
-	if debug: await redraw_and_pause(2, 1.1)
+	id_grid = copy_designated_ids(voronoi_id_array, id_grid, [2])
+	if debug: await redraw_and_pause(2, 0.1)
 	
 	# Run trials of cellular automata on the remaining {0,1} noise values 
-	idArray = cellular_automata_trials(idArray, [4,5,5,5])
-	if debug: await redraw_and_pause(3, 2.1)
+	id_grid = cellular_automata_trials(id_grid, [4,5,5,5])
+	if debug: await redraw_and_pause(3, 0.1)
 	
 	# Run flood fill to differentiate groups
-	idArray = flood_fill(idArray)
-	if debug: await redraw_and_pause(4, 2.1)
+	id_grid = flood_fill(id_grid)
+	if debug: await redraw_and_pause(4, 0.1)
 
+	district_flag_struct = district_flag_struct_loader.new(true)
+	district_manager = district_manager_loader.new(id_grid, district_flag_struct)
+	# districts = get_districts_dict(id_grid)
 	return
-	
-	districts = get_districts_dict(idArray)
+
 	
 	# Parse out the smallest groups 
-	idArray = parse_smallest_groups(idArray, districts, 25) 
+	id_grid = parse_smallest_groups(id_grid, districts, 25) 
 	if debug: await redraw_and_pause(5, 2.1)
 	
 	# Expand groups into null space (1)
-	idArray = expand_id_array(idArray, districts, [2], [2])
-	maintain_edge(idArray, 1)
-	idArray = expand_id_array(idArray, districts, [2], [])
+	id_grid = expand_id_array(id_grid, districts, [2], [2])
+	maintain_edge(id_grid, 1)
+	id_grid = expand_id_array(id_grid, districts, [2], [])
 	if debug: await redraw_and_pause(6, 0.1, true)
 	
-	districts_add_window_border(idArray, districts)
-	districts_add_bounding_boxes(idArray, districts) 
-	districts_add_centers(idArray, districts)
+	districts_add_window_border(id_grid, districts)
+	districts_add_bounding_boxes(id_grid, districts) 
+	districts_add_centers(id_grid, districts)
 
 	var centerDistrict : int = select_central_district(districts, 0.15, 0.5)
-	replace_ID(idArray, centerDistrict, 2000)
+	replace_ID(id_grid, centerDistrict, 2000)
 
 	districts[2000] = districts[centerDistrict]
 	districts.erase(centerDistrict)
 	centerDistrict = 2000
 
-	get_outgoing_path_locations(idArray)
-	# roads = add_roads(idArray, locs, true)
+	get_outgoing_path_locations(id_grid)
+	# roads = add_roads(id_grid, locs, true)
 	
 
-	# voronoi_district(idArray, centerDistrict, districts[centerDistrict]["bounding"])
+	# voronoi_district(id_grid, centerDistrict, districts[centerDistrict]["bounding"])
 
 	if debug: await redraw_and_pause(7, 0.1)
 	
@@ -88,34 +95,34 @@ func _ready() -> void:
 
 	#TODO: enforce_border and identify_walls??
 	# Make sure border is correct 
-	idArray = enforce_border(idArray)
+	id_grid = enforce_border(id_grid)
 	if debug: await redraw_and_pause(7, 0.1)
 	
 	# Make sure there is no empty space (2) district inside the city walls 
-	# idArray = flood_fill_elim_inside_terrain(idArray)
+	# id_grid = flood_fill_elim_inside_terrain(id_grid)
 	# if debug: await redraw_and_pause(8, 0.1)
 
 	# Indentify which void nodes (1) are city walls (-3) 
 	# This just helps cleanup any lingering void (1) values
 	if debug: await redraw_and_pause(9, 0.1, true)
 
-	districts = get_districts_dict(idArray)
+	districts = get_districts_dict(id_grid)
 	
 	var multiplier : float = 1.5
-	idArray = increase_array_resolution(idArray, multiplier)
+	id_grid = increase_array_resolution(id_grid, multiplier)
 	squareSize = squareSize / float(multiplier)
-	idArray = indentify_walls(idArray)
-	idArray = expand_id_array(idArray, districts, [2, -3], [])
+	id_grid = indentify_walls(id_grid)
+	id_grid = expand_id_array(id_grid, districts, [2, -3], [])
 
 	var dcs : Array[Vector2i] = []
 	for key in districts: 
 		var c : Vector2i = districts[key]["center"]
 		dcs.append(c)
 	
-	roads = add_roads(idArray, dcs, true) # DEBUGGING
+	roads = add_roads(id_grid, dcs, true) # DEBUGGING
 	if debug: await redraw_and_pause(10)
 
-	idArray = increase_array_resolution(idArray, 2.0)
+	id_grid = increase_array_resolution(id_grid, 2.0)
 	squareSize = squareSize / float(2)
 
 	for key in districts.keys():
@@ -123,7 +130,7 @@ func _ready() -> void:
 		districts[key]["center"] = Vector2i(floor(center[0] * 2.0), floor(center[1] * 2.0))
 		districts[key]["size"] *= 2
 
-	districts_add_bounding_boxes(idArray, districts) 
+	districts_add_bounding_boxes(id_grid, districts) 
 	var sumPercent : float = 0.0
 
 	var sortedKeys : Array = []
@@ -134,26 +141,26 @@ func _ready() -> void:
 	for key in sortedKeys:
 		key = key[0] 
 		if sumPercent >= 0.7: break
-		voronoi_district(idArray, key, districts[key]["bounding"])
+		voronoi_district(id_grid, key, districts[key]["bounding"])
 		sumPercent += districts[key]["sizePercent"]
 		print(sumPercent)
-		# idArray = add_district_border(idArray, key, bbs[key])
+		# id_grid = add_district_border(id_grid, key, bbs[key])
 
-	idArray = indentify_walls(idArray)
-	idArray = expand_id_array(idArray, districts, [2, -3], [])
+	id_grid = indentify_walls(id_grid)
+	id_grid = expand_id_array(id_grid, districts, [2, -3], [])
 		
 	if debug: await redraw_and_pause(11)
 	
 	for key in districts.keys(): 
 		break
-		roads = get_locations_in_district(idArray, key, districts[key]["bounding"], pow(districts[key]["size"] * 0.05 / PI, 1.0/3.0))
+		roads = get_locations_in_district(id_grid, key, districts[key]["bounding"], pow(districts[key]["size"] * 0.05 / PI, 1.0/3.0))
 		
 		#TODO: Max width is probably a better metric
 	if debug: await redraw_and_pause(12)
 
 	for key in districts.keys():
 		#break
-		idArray = add_district_center(idArray, key, districts[key]["bounding"], districts[key]["center"],sqrt(districts[key]["size"] * 0.05 / PI))
+		id_grid = add_district_center(id_grid, key, districts[key]["bounding"], districts[key]["center"],sqrt(districts[key]["size"] * 0.05 / PI))
 		
 
 	if debug: await redraw_and_pause(13)
@@ -185,9 +192,9 @@ func draw_bounding_box(col : Color, ss : float, line_width : float, tl : Vector2
 	draw_line(bottom_left, top_left, col, line_width)  # Left side
 
 # Takes nothing because it is an extension of _draw (uses global variables)
-# Draws to screen based on the values in idArray
+# Draws to screen based on the values in id_grid
 func draw_from_id_grid() -> void: 
-	# Dictionary defining a mapping from values (int) in idArray to colors in the draw 
+	# Dictionary defining a mapping from values (int) in id_grid to colors in the draw 
 	var colors_dict : Dictionary = {
 		2000 : Color.RED, # Main District (Alot of algorithms expect districts to be positive )
 		-4 : Color.BLACK, # District walls 
@@ -199,14 +206,14 @@ func draw_from_id_grid() -> void:
 		 2 : Color(0,0,0,0) # Outside space 
 	}
 
-	for x in range(len(idArray)): for y in range(len(idArray[x])): 
+	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
 		
 		# Get the value of the node 
-		var val : int = idArray[x][y]
+		var val : int = id_grid[x][y]
 		if val == 2: continue 
 
 		# Get the color and position of the node 
-		var col = colors_dict[val] if val in colors_dict else get_random_color(idArray[x][y])
+		var col = colors_dict[val] if val in colors_dict else get_random_color(id_grid[x][y])
 		var rect : Rect2 = Rect2(Vector2(x*squareSize,y*squareSize), Vector2(squareSize, squareSize))
 
 		# Draw the rect
