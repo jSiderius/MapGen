@@ -57,30 +57,29 @@ func _ready() -> void:
 
 	district_flag_struct = district_flag_struct_loader.new(true)
 	district_manager = district_manager_loader.new(id_grid, district_flag_struct)
-	# districts = get_districts_dict(id_grid)
-	return
-
 	
 	# Parse out the smallest groups 
-	id_grid = parse_smallest_groups(id_grid, districts, 25) 
+	id_grid = parse_smallest_districts(id_grid, district_manager, 25) 
 	if debug: await redraw_and_pause(5, 2.1)
-	
+
 	# Expand groups into null space (1)
-	id_grid = expand_id_array(id_grid, districts, [2], [2])
-	maintain_edge(id_grid, 1)
-	id_grid = expand_id_array(id_grid, districts, [2], [])
-	if debug: await redraw_and_pause(6, 0.1, true)
+	id_grid = expand_id_grid(id_grid, [2])
+	if debug: await redraw_and_pause(6, 2.1)
 	
-	districts_add_window_border(id_grid, districts)
-	districts_add_bounding_boxes(id_grid, districts) 
-	districts_add_centers(id_grid, districts)
+	# districts_add_window_border(id_grid, districts)
+	# districts_add_bounding_boxes(id_grid, districts) 
+	# districts_add_centers(id_grid, districts)
+	district_manager.update_district_data(id_grid, district_flag_struct)
 
-	var centerDistrict : int = select_central_district(districts, 0.15, 0.5)
-	replace_ID(id_grid, centerDistrict, 2000)
 
-	districts[2000] = districts[centerDistrict]
-	districts.erase(centerDistrict)
-	centerDistrict = 2000
+	# var centerDistrict : int = select_central_district(districts, 0.15, 0.5)
+	# replace_ID(id_grid, centerDistrict, 2000)
+
+	# districts[2000] = districts[centerDistrict]
+	# districts.erase(centerDistrict)
+	# centerDistrict = 2000
+
+	return
 
 	get_outgoing_path_locations(id_grid)
 	# roads = add_roads(id_grid, locs, true)
@@ -90,8 +89,6 @@ func _ready() -> void:
 
 	if debug: await redraw_and_pause(7, 0.1)
 	
-
-	return
 
 	#TODO: enforce_border and identify_walls??
 	# Make sure border is correct 
@@ -112,7 +109,7 @@ func _ready() -> void:
 	id_grid = increase_array_resolution(id_grid, multiplier)
 	squareSize = squareSize / float(multiplier)
 	id_grid = indentify_walls(id_grid)
-	id_grid = expand_id_array(id_grid, districts, [2, -3], [])
+	id_grid = expand_id_grid(id_grid, [2, -3])
 
 	var dcs : Array[Vector2i] = []
 	for key in districts: 
@@ -147,7 +144,7 @@ func _ready() -> void:
 		# id_grid = add_district_border(id_grid, key, bbs[key])
 
 	id_grid = indentify_walls(id_grid)
-	id_grid = expand_id_array(id_grid, districts, [2, -3], [])
+	id_grid = expand_id_grid(id_grid, [2, -3])
 		
 	if debug: await redraw_and_pause(11)
 	

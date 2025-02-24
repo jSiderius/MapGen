@@ -38,6 +38,8 @@ func update_district_data(id_grid : Array, data_flags : DistrictDataFlagStruct) 
 		update_or_init_percentage_data(id_grid)
 	if data_flags.update_centrality_data: 
 		update_or_init_district_centrality_data(id_grid)
+	if data_flags.update_bounding_data: 
+		update_or_init_bounding_data(id_grid)
 
 	last_observed_id_grid = id_grid
 
@@ -116,4 +118,41 @@ func update_or_init_district_centrality_data(id_grid : Array) -> void:
 	for key in districts_dict.keys(): 
 		districts_dict[key].set_center(id_grid)
 
+func update_or_init_bounding_data(id_grid : Array) -> void: 
+
+	# Ensure location data has been recorded
+	if not size_location_data_recorded:
+		update_or_init_size_location_data(id_grid)
+
+	for key in districts_dict.keys(): 
+		districts_dict[key].set_bounding_box()
+
+func get_district_ids_sorted_by_size() -> Array:
+	'''
+		Purpose: 
+			Construct and return an array of district ID's sorted by the respective size of the district
+		
+		Arguments: none
+
+		Return: 
+			Array: The sorted array
+	'''
+	# Set up an array with the ID as the first element and the size as the second 
+	var arr : Array = []
+	for key in districts_dict.keys():
+		arr.append([key, districts_dict[key].size_])
 	
+	# Use the custom sort function on the array
+	arr.sort_custom(_sort_by_second_element)
+
+	# Drop the sizes from the array
+	for i in range(len(arr)): 
+		arr[i] = arr[i][0]
+
+	return arr
+
+func erase_district(id : int): 
+	''' Erases the district with ID matching the argument from the data model if it exists '''
+	
+	if id in districts_dict: 
+		districts_dict.erase(id)

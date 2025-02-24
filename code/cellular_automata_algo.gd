@@ -65,45 +65,77 @@ func cellular_automata(id_grid : Array, threshold : int) -> Array:
 	
 	return new_id_grid
 
-func maintain_edge(id_grid, val : int = 0): 
+func maintain_edge(id_grid : Array, val : int = 0): 
+	''' Sets every edge cell in the grid to a designated value'''
+	# TODO: if a edge iteration method is created add it here
+	# TODO: Drop this method if it isn't used
+
 	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
 		if is_edge(x, y, len(id_grid), len(id_grid[x])): 
 			id_grid[x][y] = val
 
-# Takes an ID array, an array of ids that are autonomous (can't be expanded into), and a bool indicating if empty space (2) should expand
-# Single iteration of each group node (>2) into null space (1) if possible 
-func expand_id_array(id_grid : Array,  districts : Dictionary, autonomousIDs : Array[int] = [], expansionBlocked : Array = [], checks : Array[Vector2i] = []) -> Array: 
-	var idArrayNew : Array = id_grid.duplicate(true)
-	var newChecks : Array[Vector2i] = []
-	
-	# var totalSize : int = len(id_grid) * len(id_grid[0])
-	# for key in districts.keys(): 
-	# 	if districts[key]["size"] > totalSize * 0.3: expansionBlocked.append(key)
 
-	if checks == []:
-		for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
-			if id_grid[x][y] < 2 or id_grid[x][y] in expansionBlocked: continue
-			expand_id_array_instance(id_grid, idArrayNew, districts, Vector2i(x, y), newChecks, autonomousIDs)
-	else: 
-		for check in checks: 
-			if id_grid[check.x][check.y] < 2 or id_grid[check.x][check.y] in expansionBlocked: continue
-			expand_id_array_instance(id_grid, idArrayNew, districts, Vector2i(check.x, check.y), newChecks, autonomousIDs)
-	
-	if idArrayNew != id_grid and len(newChecks) > 0: return expand_id_array(idArrayNew, districts, autonomousIDs, expansionBlocked, newChecks)
-	return idArrayNew 
+func expand_id_grid(id_grid : Array, autonomous_ids : Array[int] = []) -> Array: 
+	'''
+		Purpose: 
+			Expand the district cells into the void space surrounding it
 
-func expand_id_array_instance(id_grid : Array, idArrayNew : Array, districts : Dictionary, pos : Vector2i, checks : Array, autonomousIDs : Array[int] = []): 
-	# Make sure the square is a group node, and has not been previously updated in this iteration
-	if id_grid[pos.x][pos.y] != idArrayNew[pos.x][pos.y]: return
+		Arguments: 
+			id_grid: 
+				The 2D grid that the function modifies
+			autonomous_ids: 
+				A list of ID's which cannot be expanded TO in the algorithm (district ID's (>3) are autonomous by default)
+
+		Return: 
+			Array: 'id_grid' manipulated by the algorithm
+		
+		Notes
+			- Could add other expansion parameters such as min/max size and block/encourage expansion accordingly
+			- pop_at(randi() mod len(checks)) gives a more random distribution, pop_front() is most spatially accurate to the starting point, pop_back() is extremelly biased
+	'''
+
+	# Get the array of every district cell in the grid
+	var active_expansion_cells : Array[Vector2i] = get_district_cell_location_array(id_grid)
 	
-	# Determine if any candidates are valid for expansion
+	# Assess if an active cell has any expandable neighbors (which then become active) until there are no active cells
+	while len(active_expansion_cells) > 0:
+		var position : Vector2i = active_expansion_cells.pop_front()
+		expand_id_grid_instance(id_grid, position, active_expansion_cells, autonomous_ids)
+	
+	return id_grid
+
+func expand_id_grid_instance(id_grid : Array, pos : Vector2i, active_expansion_cells : Array, autonomous_ids : Array[int] = []) -> void: 
+	'''
+		Purpose: 
+			Given a position in the grid, determine if the cell can validly expand to any of its neighbors, and do so
+		
+		Arguments: 
+			id_grid: the id_grid 
+
+		Return: void
+	'''
+
+	# Ensure the cell is a group node
+	if id_grid[pos.x][pos.y] <= 2: return
+	
+	# Determine if any neighbors are valid for expansion
 	for n in neighbors: 
-		var newX : int = pos.x + n[0]
-		var newY : int = pos.y + n[1]
-		if not bounds_check(newX, newY, len(id_grid), len(id_grid[pos.x])): continue
-		if id_grid[newX][newY] > 2 or id_grid[newX][newY] in autonomousIDs: continue #TIME OUT, THESE CAN EXPAND INTO EACH OTHER ? 
+		var n_pos : Vector2i = pos + n
 
-		if idArrayNew[newX][newY] == 1: 
-			idArrayNew[newX][newY] = id_grid[pos.x][pos.y]
-			checks.append(Vector2i(newX, newY))
-			districts[id_grid[pos.x][pos.y]]["size"] += 1
+		# Ensure the neighbor is within the bounds, and has an ID that is valid for expansion
+		if not bounds_check(n_pos.x, n_pos.y, len(id_grid), len(id_grid[pos.x])): continue
+		if id_grid[n_pos.x][n_pos.y] > 2 or id_grid[n_pos.x][n_pos.y] in autonomous_ids: continue
+
+		# Set the neighbors value and add it to the active expansion cells
+		id_grid[n_pos.x][n_pos.y] = id_grid[pos.x][pos.y]
+		active_expansion_cells.append(n_pos)
+
+func get_district_cell_location_array(id_grid : Array) -> Array[Vector2i]: 
+	''' Returns an array of the Vector2i location of every district cell (with ID > 2) '''
+
+	var location_array : Array[Vector2i] = []
+
+	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
+		if id_grid[x][y] > 2: location_array.append(Vector2i(x,y))
+	
+	return location_array
