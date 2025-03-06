@@ -6,6 +6,7 @@ var district : Resource = preload("res://code/Districts/district.gd")
 var districts_dict : Dictionary = {}
 var last_observed_id_grid = []
 var size_location_data_recorded = false
+var center_district_id : int = 0
 
 func _init(id_grid : Array, data_flags : DistrictDataFlagStruct):
 	
@@ -37,7 +38,7 @@ func update_district_data(id_grid : Array, data_flags : DistrictDataFlagStruct) 
 	if data_flags.update_percentage_data: 
 		update_or_init_percentage_data(id_grid)
 	if data_flags.update_centrality_data: 
-		update_or_init_district_centrality_data(id_grid)
+		update_or_init_centrality_data(id_grid)
 	if data_flags.update_bounding_data: 
 		update_or_init_bounding_data(id_grid)
 
@@ -98,7 +99,7 @@ func update_or_init_percentage_data(id_grid : Array) -> void:
 	for key in districts_dict.keys():
 		districts_dict[key].percentage = float(districts_dict[key].size_) / totalSize
 
-func update_or_init_district_centrality_data(id_grid : Array) -> void: 
+func update_or_init_centrality_data(id_grid : Array) -> void: 
 	'''
 		Purpose:
 			Observe and store information about the centrality of each district in 'districts_dict' 
@@ -117,6 +118,14 @@ func update_or_init_district_centrality_data(id_grid : Array) -> void:
 	# Defer to the District class to calculate the data for each districts
 	for key in districts_dict.keys(): 
 		districts_dict[key].set_center(id_grid)
+	
+	var keys = get_keys_sorted_by_attribute("distance_to_grid_center", true)
+	center_district_id = keys[0]
+	
+	# TODO
+	# for key in keys: 
+		# if not districts[key]["windowBorder"]["any"]: return key
+	# 	return keys.pick_random()
 
 func update_or_init_bounding_data(id_grid : Array) -> void: 
 
@@ -127,29 +136,29 @@ func update_or_init_bounding_data(id_grid : Array) -> void:
 	for key in districts_dict.keys(): 
 		districts_dict[key].set_bounding_box()
 
-func get_district_ids_sorted_by_size() -> Array:
+func get_keys_sorted_by_attribute(attribute : String, ascending : bool) -> Array:
 	'''
 		Purpose: 
-			Construct and return an array of district ID's sorted by the respective size of the district
+			Construct and return an array of district ID's sorted by a district class attribute
 		
-		Arguments: none
+		Arguments: 
+			attribute: 
+				A string representing a class attribute of 'District' the array should be sorted by 
+				TODO: Ensure good values
+			ascending: 
+				Determines if the array is sorted in ascending or descending order
 
 		Return: 
 			Array: The sorted array
 	'''
-	# Set up an array with the ID as the first element and the size as the second 
-	var arr : Array = []
-	for key in districts_dict.keys():
-		arr.append([key, districts_dict[key].size_])
+
+	var districts_arr : Array = _sort_by_attribute(districts_dict.values(), attribute, ascending)
+	var keys_arr : Array = []
+
+	for district in districts_arr: 
+		keys_arr.append(district.id)
 	
-	# Use the custom sort function on the array
-	arr.sort_custom(_sort_by_second_element)
-
-	# Drop the sizes from the array
-	for i in range(len(arr)): 
-		arr[i] = arr[i][0]
-
-	return arr
+	return keys_arr
 
 func erase_district(id : int): 
 	''' Erases the district with ID matching the argument from the data model if it exists '''

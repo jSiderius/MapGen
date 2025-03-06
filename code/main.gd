@@ -66,38 +66,27 @@ func _ready() -> void:
 	id_grid = expand_id_grid(id_grid, [2])
 	if debug: await redraw_and_pause(6, 2.1)
 	
-	# districts_add_window_border(id_grid, districts)
-	# districts_add_bounding_boxes(id_grid, districts) 
-	# districts_add_centers(id_grid, districts)
 	district_manager.update_district_data(id_grid, district_flag_struct)
 
-
-	# var centerDistrict : int = select_central_district(districts, 0.15, 0.5)
-	# replace_ID(id_grid, centerDistrict, 2000)
-
-	# districts[2000] = districts[centerDistrict]
-	# districts.erase(centerDistrict)
-	# centerDistrict = 2000
-
-	return
-
-	get_outgoing_path_locations(id_grid)
+	# TODO: PATHS RANDOMLY FROM THE EDGE OF THE CENTER DISTRICT TO THE EDGE OF THE SCREEN
+	# get_outgoing_path_locations(id_grid, district_manager)
+	
+	# TODO: DETERMINES PATHING BETWEEN MAJOR ROADS
 	# roads = add_roads(id_grid, locs, true)
-	
 
+	# TODO: ORIGINAL PURPOSE WAS TO SUBDIVIDE A DISTRICT INTO SMALLER VORONOI DISTRICTS, MAY NOT BE NECESSARY
 	# voronoi_district(id_grid, centerDistrict, districts[centerDistrict]["bounding"])
+	# if debug: await redraw_and_pause(7, 0.1)
 
+	# Ensure there are no inside districts (common bug) TODO: Could assess the cause but this is fine too
+	id_grid = flood_fill_elim_inside_terrain(id_grid)
 	if debug: await redraw_and_pause(7, 0.1)
-	
 
-	#TODO: enforce_border and identify_walls??
 	# Make sure border is correct 
 	id_grid = enforce_border(id_grid)
-	if debug: await redraw_and_pause(7, 0.1)
-	
-	# Make sure there is no empty space (2) district inside the city walls 
-	# id_grid = flood_fill_elim_inside_terrain(id_grid)
-	# if debug: await redraw_and_pause(8, 0.1)
+	if debug: await redraw_and_pause(8, 0.1)
+	return	
+
 
 	# Indentify which void nodes (1) are city walls (-3) 
 	# This just helps cleanup any lingering void (1) values

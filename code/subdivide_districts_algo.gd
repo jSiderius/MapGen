@@ -82,11 +82,7 @@ func get_locations_in_district(idArray : Array, id : int, boundingBox : Array, e
 
 	# return idArray
 
-func select_central_district(districts : Dictionary, percentMax : float = 0.2, percentMin : float = 0.01, depth : int = 1) -> int: 
-	var keys = sorted_district_keys(districts, "disToCenter")
-	for key in keys: 
-		if not districts[key]["windowBorder"]["any"]: return key
-	return keys.pick_random()
+
 
 func replace_ID(idArray : Array, elimID : int, replacementID : int) -> void: 
 	for x in range(len(idArray)): for y in range(len(idArray[x])): 

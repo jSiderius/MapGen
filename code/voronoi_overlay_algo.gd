@@ -182,25 +182,26 @@ func copy_designated_ids(from_grid : Array, to_grid : Array, ids_to_copy : Array
 	
 	return to_grid
 
-# Takes an ID array 
-# Check if any exterior nodes (2) should be border nodes (1 ... changes to -3 at later point)
 func enforce_border(id_grid : Array) -> Array:
-	'''
-		Purpose: 
+	''' Enforces the border between district cells (>2) and null space (2) setting the in-between cells to the border ID (1)'''
 
-		Args: 
-		
-		Returns: 
-	'''
-
+	# Iterate the grid
 	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
+
+		# Skip if the cell is not null space (2) or is on the edge
 		if id_grid[x][y] != 2 or is_edge(x, y, len(id_grid), len(id_grid[x])): continue
+
+		# Iterate all neighbors
 		for n in neighbors:	
-			if id_grid[x + n[0]][y + n[1]] > 2: id_grid[x][y] = 1
+
+			# If the neighbor is a district, set the cell to a border (1)
+			if id_grid[x + n[0]][y + n[1]] > 2: 
+				id_grid[x][y] = 1
+				break
+
 	return id_grid
 
-
-# COMPARTMENTALIZE
+# ORIGINAL PURPOSE WAS TO SUBDIVIDE A DISTRICT INTO SMALLER VORONOI DISTRICTS, MAY NOT BE NECESSARY
 func voronoi_district(id_grid : Array, id : int, boundingBox : Array): 
 	'''
 		Purpose: 

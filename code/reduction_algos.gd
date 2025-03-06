@@ -20,8 +20,10 @@ func parse_smallest_districts(id_grid : Array, district_manager : DistrictManage
 	'''
 
 	# Create a array the groups sorted by their sizes 
-	var keys : Array = district_manager.get_district_ids_sorted_by_size()
+	var keys : Array = district_manager.get_keys_sorted_by_attribute("size_", true)
 
+	print(keys)
+	
 	# If there are already few enough groups return
 	if len(keys) <= num_districts: return id_grid
 	

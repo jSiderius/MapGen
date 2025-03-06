@@ -5,39 +5,39 @@ var graph : Resource = preload("res://code/graph.gd")
 
 # Takes an ID array
 # Determines the set of major roads between district centers, sets them in the array, returns 
-func add_roads(idArray : Array, vertices : Array[Vector2i], colorVert : bool = false) -> Array: 
+func add_roads(id_grid : Array, vertices : Array[Vector2i], colorVert : bool = false) -> Array: 
 	
 	print("Looking for MST on ", len(vertices), " vertices")
 	var roads : Array[Array] = []
 	for i in range(len(vertices)): for j in range(i+1, len(vertices)): 
 		roads.append([vertices[i], vertices[j]])
 	
-	var g : Graph = graph.new(roads, vertices, len(idArray), len(idArray[0]))
-	# idArray = g.add_modified_mst(idArray, 8.0, mod)
-	g.add_modified_mst2(idArray)
+	var g : Graph = graph.new(roads, vertices, len(id_grid), len(id_grid[0]))
+	# id_grid = g.add_modified_mst(id_grid, 8.0, mod)
+	g.add_modified_mst2(id_grid)
 
 	# if colorVert: 
-	for v in vertices: idArray[v[0]][v[1]] = -2 if colorVert else -1
+	for v in vertices: id_grid[v[0]][v[1]] = -2 if colorVert else -1
 	
 	# roads = []
 	return roads
 
 # TODO: Use bounding box
-func get_outgoing_path_locations(idArray : Array): 
+func get_outgoing_path_locations(id_grid : Array, district_manager : DistrictManager): 
 	var districtBorderNodes : Array[Vector2i] = []
 	var edgeNodes : Array[Vector2i] = []
-	for x in range(len(idArray)): for y in range(len(idArray[x])): 
-		if is_edge(x, y, len(idArray), len(idArray[x])): 
+	for x in range(len(id_grid)): for y in range(len(id_grid[x])):
+		if is_edge(x, y, len(id_grid), len(id_grid[x])): 
 			edgeNodes.append(Vector2i(x, y))
 			continue
-		if not idArray[x][y] == 2000: continue
+		if not id_grid[x][y] == district_manager.center_district_id: continue
 
-		for n in neighbors: 
+		for n in neighbors:
 			var newX : int = x + n.x 
 			var newY : int = y + n.y
 
-			if not bounds_check(newX, newY, len(idArray), len(idArray[x])): continue
-			if idArray[newX][newY] != idArray[x][y]: districtBorderNodes.append(Vector2i(newX, newY))
+			if not bounds_check(newX, newY, len(id_grid), len(id_grid[x])): continue
+			if id_grid[newX][newY] != id_grid[x][y]: districtBorderNodes.append(Vector2i(newX, newY))
 
 	var pairs : Array[Array] = []
 	var selectedEdges : Array[Vector2i] = select_random_items(edgeNodes, 6)
@@ -49,11 +49,8 @@ func get_outgoing_path_locations(idArray : Array):
 			minDis = currDis
 			minNode = node2
 		pairs.append([node1, minNode])
-
-		
-
 	
 	var g : Graph = graph.new(Array([], TYPE_ARRAY, "", null), Array([], TYPE_VECTOR2I, "", null))
 	for pair in pairs: 
-		g.positions_to_roads(idArray, g.a_star(idArray, pair[0], pair[1]))
+		g.positions_to_roads(id_grid, g.a_star(id_grid, pair[0], pair[1]))
 	

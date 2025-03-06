@@ -88,6 +88,10 @@ func _sort_by_second_element(a, b):
 func _sort_by_second_element_reverse(a, b):
 	return a[1] > b[1]
 
+func _sort_by_attribute(array : Array, attribute : String, ascending : bool):
+	array.sort_custom(func(a, b): return (a[attribute] < b[attribute]) if ascending else (a[attribute] > b[attribute]))
+	return array
+
 var startTime : String = Time.get_datetime_string_from_system()
 var path = "/Users/joshsiderius/Desktop/GodotSS/%s" % [startTime]
 var first = true 
