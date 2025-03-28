@@ -93,40 +93,6 @@ func find_unique_edge_cell_ids(id_grid : Array) -> Array:
 	
 	return edge_cell_ids
 
-# TODO: Holding off on docs for this because if I use it again I'll probably override with some modular way to select right, left, up, down, and corners
-func find_unique_rightside_border_cell_ids(id_grid : Array, trials : int = 1) -> Array:
-	'''
-		Purpose: 
-
-		Args: 
-		
-		Returns: 
-	'''
-
-	var edgeCells : Array = []
-	for x in range(len(id_grid)): for y in range(len(id_grid[x])): #TODO: See 'TODO' in find_unique_edge_cell_ids
-		var cell_id : int = id_grid[x][y]
-
-		# Check if the cell is adjacent to the right edge and the cell's ID is not already in the set
-		if x + 1 == len(id_grid) and cell_id not in edgeCells: 
-			edgeCells.append(cell_id)
-
-	# Extend the depth ie. trials = 2 is border or bordering a border, ...
-	# TODO: refactor and/or document for
-	for i in range(trials - 1): 
-		var edgeCellsNext : Array = []
-		for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
-			for n in four_neighbors: 
-				var newX : int = x + n[0]
-				var newY : int = y + n[1]
-
-				if not bounds_check(newX, newY, len(id_grid), len(id_grid[x])): continue
-				if id_grid[newX][newY] in edgeCells and id_grid[newX][newY] not in edgeCellsNext: 
-					edgeCellsNext.append(id_grid[newX][newY])
-		edgeCells.append_array(edgeCellsNext)
-		
-	return edgeCells
-
 func overwrite_cells_by_id(id_grid : Array, ids_to_overwrite : Array, new_cell_id : int = 0) -> Array: 
 	'''
 		Purpose: 
@@ -182,26 +148,7 @@ func copy_designated_ids(from_grid : Array, to_grid : Array, ids_to_copy : Array
 	
 	return to_grid
 
-func enforce_border(id_grid : Array) -> Array:
-	''' Enforces the border between district cells (>2) and null space (2) setting the in-between cells to the border ID (1)'''
-
-	# Iterate the grid
-	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
-
-		# Skip if the cell is not null space (2) or is on the edge
-		if id_grid[x][y] != 2 or is_edge(x, y, len(id_grid), len(id_grid[x])): continue
-
-		# Iterate all neighbors
-		for n in neighbors:	
-
-			# If the neighbor is a district, set the cell to a border (1)
-			if id_grid[x + n[0]][y + n[1]] > 2: 
-				id_grid[x][y] = 1
-				break
-
-	return id_grid
-
-# ORIGINAL PURPOSE WAS TO SUBDIVIDE A DISTRICT INTO SMALLER VORONOI DISTRICTS, MAY NOT BE NECESSARY
+''' TODO: ORIGINAL PURPOSE WAS TO SUBDIVIDE A DISTRICT INTO SMALLER VORONOI DISTRICTS, MAY NOT BE NECESSARY '''
 func voronoi_district(id_grid : Array, id : int, boundingBox : Array): 
 	'''
 		Purpose: 
@@ -241,3 +188,37 @@ func voronoi_district(id_grid : Array, id : int, boundingBox : Array):
 					id_grid[x][y] = -4
 	
 	# MIN_UNIQUE_ID += len(locations)
+
+''' TODO: Holding off on docs for this because if I use it again I'll probably override with some modular way to select right, left, up, down, and corners '''
+func find_unique_rightside_border_cell_ids(id_grid : Array, trials : int = 1) -> Array:
+	'''
+		Purpose: 
+
+		Args: 
+		
+		Returns: 
+	'''
+
+	var edgeCells : Array = []
+	for x in range(len(id_grid)): for y in range(len(id_grid[x])): #TODO: See 'TODO' in find_unique_edge_cell_ids
+		var cell_id : int = id_grid[x][y]
+
+		# Check if the cell is adjacent to the right edge and the cell's ID is not already in the set
+		if x + 1 == len(id_grid) and cell_id not in edgeCells: 
+			edgeCells.append(cell_id)
+
+	# Extend the depth ie. trials = 2 is border or bordering a border, ...
+	# TODO: refactor and/or document for
+	for i in range(trials - 1): 
+		var edgeCellsNext : Array = []
+		for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
+			for n in four_neighbors: 
+				var newX : int = x + n[0]
+				var newY : int = y + n[1]
+
+				if not bounds_check(newX, newY, len(id_grid), len(id_grid[x])): continue
+				if id_grid[newX][newY] in edgeCells and id_grid[newX][newY] not in edgeCellsNext: 
+					edgeCellsNext.append(id_grid[newX][newY])
+		edgeCells.append_array(edgeCellsNext)
+		
+	return edgeCells

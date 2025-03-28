@@ -1,4 +1,5 @@
-extends "res://code/voronoi_overlay_algo.gd"
+extends "res://code/cellular_automata_algo.gd"
+# extends "res://code/voronoi_overlay_algo.gd"
 
 func flood_fill(id_grid : Array, target_id : int = 0) -> Array: 
 	'''
@@ -34,6 +35,7 @@ func flood_fill_solve_group(id_grid : Array, initial_pos : Vector2i, new_id : in
 	'''
 		Purpose: 
 			Set all cells with an ID of 'target_id' that are spatially connected to 'initial_pos' to 'new_id'
+			Solves a single group of connected cells within the larger 'flood_fill' algorithm
 
 		Arguments: 
 			id_grid: 
@@ -74,16 +76,26 @@ func flood_fill_solve_group(id_grid : Array, initial_pos : Vector2i, new_id : in
 	
 	return id_grid
 
-# Takes an ID array
-# Fill's in any group of '2' (empty space) that is not connected to an edge with an ID
-# This function is a fix to a consistent bug of a region generating on the inside of the city 
 func flood_fill_elim_inside_terrain(id_grid : Array) -> Array: 
+	'''
+		Purpose: 
+			Gives a district ID to empty space (2) which is surrounded by district ID's (>2)
+			This addresses a bug where a single district is set as empty space (2)
+			NOTE: Should be reassessed in versions of the program that do not use empty space, the algorithm has some dependancies on this and the bug may not occur
+			TODO: Fix the bug before it happens instead of after
+			TODO: Only accounts for one new district (okay because only one has been observed)
+
+		Arguments: 
+			id_grid: The 2D grid to perform the algorithm on
+
+		Return: 
+			Array: 'id_grid manipulated by the algorithm'
+	'''
 
 	# Flood fill the edge group from (0,0) and replace values of '2' with '0'
 	id_grid = flood_fill_solve_group(id_grid, Vector2(0,0), 0, 2)
 
 	# Replace any remaining values of '2' with a new group
-	# TODO: technically could be more than one group but haven't observed this 
 	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
 		if id_grid[x][y] == 2: id_grid[x][y] = MIN_UNIQUE_ID
 	MIN_UNIQUE_ID += 1
@@ -92,20 +104,84 @@ func flood_fill_elim_inside_terrain(id_grid : Array) -> Array:
 	id_grid = flood_fill_solve_group(id_grid, Vector2(0,0), 2, 0)
 	return id_grid
 
-# Takes an ID array 
-# Determine which nodes should be walls and update them in the array, return 
-func indentify_walls(id_grid) -> Array:
+func add_city_border(id_grid : Array, border_value : int = -4) -> Array:
+	''' Adds a border of cells with value 'border_value' between null space (2) and district space (>2) '''
+
+	id_grid = add_rough_city_border(id_grid, border_value)
+
+	id_grid = validate_city_border(id_grid, border_value)
+
+	return id_grid
+
+func validate_city_border(id_grid : Array, border_value : int = -4) -> Array:
+	'''   
+		Purpose: 
+			Validates the border by ensuring every cell with value 'border_value' borders null space (2)
+			NOTE: Could be extended to district borders using null space arguments and small changes in logic
+			
+		Arguments: 
+			id_grid: 
+				2D grid for the algoritm
+			border_value: 
+				The ID value of border cells
+		
+		Return: 
+			Array: 'id_grid' manipulated by the algorithm
+	'''
+
+	# Iterate the grid
 	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
-		# Only checking for void (1) nodes 
-		if id_grid[x][y] != 1: continue
+		
+		# Only checking for cells with value 'border_value'
+		if id_grid[x][y] != border_value: continue
 
-		# If any neighbor is open space (2) set at city wall (-3)
+		
+		# Loop to ensure the cell neighbors null space (2)
+		var is_border : bool = false
 		for n in neighbors: 
-			if id_grid[x+n[0]][y+n[1]] == 2: 
-				id_grid[x][y] = -3
+			var n_pos : Vector2i = Vector2i(x, y) + n
+			
+			if id_grid[n_pos.x][n_pos.y] == 2: 
+				is_border = true
 				break
+		
+		# If the cell should not be a border set it to an arbitrary value that will be overwritten
+		if not is_border: 
+			id_grid[x][y] = -1001
+			
+	# Expand the grid to overwrite arbitrary values
+	id_grid = expand_id_grid(id_grid, [2, border_value])
 
-		# Has not been set as city wall (-3) therefore must be district wall (-4)
-		# if id_grid[x][y] == 1: id_grid[x][y] = -4
+	return id_grid
+
+func add_rough_city_border(id_grid : Array, border_value : int = -4) -> Array:
+	'''
+		Purpose: 
+			Adds a rough city border by searching from null space cells (2) and setting as borders if they have a neighboring district cell (>2)
+			NOTE: This is a rough border because it can create small interior lumps of border, these can be eliminated with the 'validate_city_border' function
+
+		Arguments: 
+			id_grid: 
+				The 2D grid to perform the algorithm on
+			border_value: 
+				The new ID for the border cells
+		
+		Return: 
+			Array: 'id_grid' manupulated by the algorithm
+	'''
+
+	# Iterate the grid
+	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
+
+		# Skip if the cell is not null space (2) or is on the edge
+		if id_grid[x][y] != 2 or is_edge(x, y, len(id_grid), len(id_grid[x])): continue
+
+		# Iterate all neighbors
+		for n in neighbors:	
+
+			# If the neighbor is a district, set the cell to a border ('border_value')
+			if id_grid[x + n[0]][y + n[1]] > 2: 
+				id_grid[x][y] = border_value
+				break
 
 	return id_grid

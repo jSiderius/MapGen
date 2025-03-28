@@ -1,4 +1,5 @@
-extends "res://code/flood_fill_algo.gd"
+# extends "res://code/flood_fill_algo.gd"
+extends "res://code/voronoi_overlay_algo.gd"
 
 func cellular_automata_trials(id_grid : Array, trial_threshold_values : Array[int]) -> Array:
 	'''
@@ -99,8 +100,8 @@ func expand_id_grid(id_grid : Array, autonomous_ids : Array[int] = []) -> Array:
 	
 	# Assess if an active cell has any expandable neighbors (which then become active) until there are no active cells
 	while len(active_expansion_cells) > 0:
-		var position : Vector2i = active_expansion_cells.pop_front()
-		expand_id_grid_instance(id_grid, position, active_expansion_cells, autonomous_ids)
+		var pos : Vector2i = active_expansion_cells.pop_front()
+		expand_id_grid_instance(id_grid, pos, active_expansion_cells, autonomous_ids)
 	
 	return id_grid
 

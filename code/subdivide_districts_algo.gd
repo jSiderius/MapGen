@@ -7,7 +7,7 @@ func subdivide_district(idArrayArg : Array, bb : Array, _key : int) -> Array:
 
 # Takes 2 vectors (Vector2) and an ID array 
 # Returns a 2D array of all values between the vectors in the ID array
-func get_array_between(v1: Vector2, v2: Vector2, idArray: Array) -> Array:
+func get_array_between(v1: Vector2, v2: Vector2, id_grid: Array) -> Array:
 	# Ensure v1 has the smaller x and y values
 	var start = Vector2(min(v1.x, v2.x), min(v1.y, v2.y))
 	var end = Vector2(max(v1.x, v2.x), max(v1.y, v2.y))
@@ -17,58 +17,64 @@ func get_array_between(v1: Vector2, v2: Vector2, idArray: Array) -> Array:
 	for x in range(start.x, end.x+1): 
 		result.append([])
 		for y in range(start.y, end.y+1):
-			if not bounds_check(x, y, len(idArray), len(idArray[x])): continue 
-			result[x-start.x].append(idArray[x][y])
+			if not bounds_check(x, y, len(id_grid), len(id_grid[x])): continue 
+			result[x-start.x].append(id_grid[x][y])
 
 	return result
 	
-func increase_array_resolution(idArray : Array, multiplier : float = 2): 
-	var idArrayNew : Array = []
+func increase_array_resolution(id_grid : Array, multiplier : float = 2): 
+	'''	Increases the resolution of 'id_grid' by a factor of 'multiplier' '''
 
-	for i in range(floor(multiplier * len(idArray))): 
-		idArrayNew.append([])
-		for j in range(floor(multiplier * len(idArray[0]))): 
-			idArrayNew[i].append(idArray[floor(i / float(multiplier))][floor(j / float(multiplier))])
+	var id_grid_new : Array = []
 
-	return idArrayNew
+	# Iterate multiplier * the size of the current grid
+	for i in range(floor(multiplier * len(id_grid))):
+		id_grid_new.append([])
+		for j in range(floor(multiplier * len(id_grid[0]))): 
+			# Add the interpolated value to the new grid
+			id_grid_new[i].append(id_grid[floor(i / float(multiplier))][floor(j / float(multiplier))])
+	
+	# return the grid
+	return id_grid_new
 
-func add_district_border(idArray : Array, id : int, bounding_box : Array): 
+# TODO: Probably depreciated in District
+func add_district_border(id_grid : Array, id : int, bounding_box : Array): 
 	for x in range(bounding_box[0][0], bounding_box[1][0]+1, 1):
 		for y in range(bounding_box[0][1], bounding_box[1][1]+1, 1): 
-			if not idArray[x][y] == id: continue
+			if not id_grid[x][y] == id: continue
 			
 			for n in neighbors: 
 				var newX : int = x + n[0]
 				var newY : int = y + n[1]
 				
-				if idArray[newX][newY] > 2 and idArray[newX][newY] not in [id]: 
-					idArray[newX][newY] = -4
-	return idArray
+				if id_grid[newX][newY] > 2 and id_grid[newX][newY] not in [id]: 
+					id_grid[newX][newY] = -4
+	return id_grid
 
-func add_district_center(idArray : Array, id : int, bounding_box : Array, center : Vector2i, radius : float) -> Array:
+func add_district_center(id_grid : Array, id : int, bounding_box : Array, center : Vector2i, radius : float) -> Array:
 	for x in range(bounding_box[0][0], bounding_box[1][0]+1, 1):
 		for y in range(bounding_box[0][1], bounding_box[1][1]+1, 1): 
-			if idArray[x][y] not in [id, -1]: continue 
+			if id_grid[x][y] not in [id, -1]: continue 
 
 			var distance : float = sqrt(pow(x - center[0], 2) + pow(y - center[1], 2))
 			if distance > radius: continue
 
-			idArray[x][y] = -2
+			id_grid[x][y] = -2
 
-	return idArray 
+	return id_grid 
 
-func get_locations_in_district(idArray : Array, id : int, boundingBox : Array, edgeBarrier : float = 3.0):
+func get_locations_in_district(id_grid : Array, id : int, boundingBox : Array, edgeBarrier : float = 3.0):
 
 	var districtNodes : Array[Vector2i] = []
 	var borderNodes : Array[Vector2i] = []
 	for x in range(boundingBox[0][0]-1, boundingBox[1][0]+2, 1):
 		for y in range(boundingBox[0][1]-1, boundingBox[1][1]+2, 1): 
-			if not bounds_check(x, y, len(idArray), len(idArray[0])): continue
-			if idArray[x][y] in [-3, -4]: borderNodes.append(Vector2i(x, y))
+			if not bounds_check(x, y, len(id_grid), len(id_grid[0])): continue
+			if id_grid[x][y] in [-3, -4]: borderNodes.append(Vector2i(x, y))
 
 	for x in range(boundingBox[0][0], boundingBox[1][0]+1, 1):
 		for y in range(boundingBox[0][1], boundingBox[1][1]+1, 1): 
-			if not idArray[x][y] == id: continue
+			if not id_grid[x][y] == id: continue
 			var valid = true
 			for b in borderNodes: 
 				if Vector2i(x, y).distance_to(b) > edgeBarrier: continue
@@ -78,16 +84,16 @@ func get_locations_in_district(idArray : Array, id : int, boundingBox : Array, e
 			if valid: districtNodes.append(Vector2i(x,y))
 
 	var locations = select_random_items(districtNodes, 100) #floor(len(districtNodes) * 0.005)) 
-	return add_roads(idArray, locations, true)
+	return add_roads(id_grid, locations, true)
 
-	# return idArray
+	# return id_grid
 
 
 
-func replace_ID(idArray : Array, elimID : int, replacementID : int) -> void: 
-	for x in range(len(idArray)): for y in range(len(idArray[x])): 
-		if idArray[x][y] != elimID: continue 
-		idArray[x][y] = replacementID
+func replace_ID(id_grid : Array, elimID : int, replacementID : int) -> void: 
+	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
+		if id_grid[x][y] != elimID: continue 
+		id_grid[x][y] = replacementID
 	
 
 	

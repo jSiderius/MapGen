@@ -33,15 +33,22 @@ func update_district_data(id_grid : Array, data_flags : DistrictDataFlagStruct) 
 
 	if last_observed_id_grid == id_grid: return
 
+	# TODO: Appropriately handle initializing vs reseting
+	districts_dict = {}
+
 	if data_flags.update_size_location_data:
 		update_or_init_size_location_data(id_grid)
+		print("1")
 	if data_flags.update_percentage_data: 
 		update_or_init_percentage_data(id_grid)
+		print("2")
 	if data_flags.update_centrality_data: 
 		update_or_init_centrality_data(id_grid)
+		print("3")
 	if data_flags.update_bounding_data: 
 		update_or_init_bounding_data(id_grid)
-
+		print("4")
+		
 	last_observed_id_grid = id_grid
 
 func update_or_init_size_location_data(id_grid : Array) -> void: 
@@ -71,9 +78,13 @@ func update_or_init_size_location_data(id_grid : Array) -> void:
 		# Update the size counter for the district
 		districts_dict[id].locations.append(Vector2i(x,y))
 	
-	# Update the total size of each district based on the length of the locations array
+	
 	for key in districts_dict.keys():
+		# Update the size of the district based on the length of the locations array
 		districts_dict[key].size_ = len(districts_dict[key].locations) 
+
+		# Determine which locations of the district are borders
+		districts_dict[key].set_border(id_grid)
 		
 	size_location_data_recorded = true
 
@@ -159,6 +170,38 @@ func get_keys_sorted_by_attribute(attribute : String, ascending : bool) -> Array
 		keys_arr.append(district.id)
 	
 	return keys_arr
+
+func get_district_centers() -> Array[Vector2i]: 
+	''' Compiles and returns an array of the center of every district tracked by the district manager '''
+
+	var district_centers : Array[Vector2i] = []
+	for key in districts_dict.keys(): 
+		district_centers.append(districts_dict[key].center)
+	
+	return district_centers
+
+func get_district(key : int) -> District:
+	''' TODO: Ensure values '''
+	''' Returns a district from 'districts_dict' if it exists '''
+	if key not in districts_dict.keys(): return null
+	return districts_dict[key]
+
+func get_district_attribute(key : int, attribute : String): 
+	''' TODO: Ensure values '''
+	''' Returns an attribute from a district in 'districts_dict' if it exists '''
+
+	return districts_dict[key][attribute]
+
+func get_borders_to_render(): 
+	var borders_to_render : Array[Vector2i] = []
+	
+	for d in districts_dict.values(): 
+		if not d.render_border: continue
+
+		borders_to_render += d.border
+	
+	return borders_to_render
+
 
 func erase_district(id : int): 
 	''' Erases the district with ID matching the argument from the data model if it exists '''

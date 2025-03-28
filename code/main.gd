@@ -1,5 +1,6 @@
 #TODO: Make sure false and true us consistent for all fuctions
-extends "res://code/cellular_automata_algo.gd"
+# extends "res://code/cellular_automata_algo.gd"
+extends "res://code/flood_fill_algo.gd"
 
 # export variables
 @export var debug : bool = true
@@ -19,6 +20,9 @@ var district_manager : DistrictManager
 
 
 func _ready() -> void: 
+
+	district_flag_struct = district_flag_struct_loader.new(true)
+	district_manager = district_manager_loader.new(id_grid, district_flag_struct)
 
 	# Initialize  variables
 	var rng = RandomNumberGenerator.new()
@@ -55,16 +59,15 @@ func _ready() -> void:
 	id_grid = flood_fill(id_grid)
 	if debug: await redraw_and_pause(4, 0.1)
 
-	district_flag_struct = district_flag_struct_loader.new(true)
-	district_manager = district_manager_loader.new(id_grid, district_flag_struct)
+	
 	
 	# Parse out the smallest groups 
 	id_grid = parse_smallest_districts(id_grid, district_manager, 25) 
-	if debug: await redraw_and_pause(5, 2.1)
+	if debug: await redraw_and_pause(5, 0.1)
 
 	# Expand groups into null space (1)
 	id_grid = expand_id_grid(id_grid, [2])
-	if debug: await redraw_and_pause(6, 2.1)
+	if debug: await redraw_and_pause(6, 0.1)
 	
 	district_manager.update_district_data(id_grid, district_flag_struct)
 
@@ -82,74 +85,48 @@ func _ready() -> void:
 	id_grid = flood_fill_elim_inside_terrain(id_grid)
 	if debug: await redraw_and_pause(7, 0.1)
 
-	# Make sure border is correct 
-	id_grid = enforce_border(id_grid)
-	if debug: await redraw_and_pause(8, 0.1)
-	return	
-
-
-	# Indentify which void nodes (1) are city walls (-3) 
-	# This just helps cleanup any lingering void (1) values
-	if debug: await redraw_and_pause(9, 0.1, true)
-
-	districts = get_districts_dict(id_grid)
-	
+	# Increase the array resolution and add a new (thinner) border
 	var multiplier : float = 1.5
 	id_grid = increase_array_resolution(id_grid, multiplier)
 	squareSize = squareSize / float(multiplier)
-	id_grid = indentify_walls(id_grid)
-	id_grid = expand_id_grid(id_grid, [2, -3])
+	add_city_border(id_grid, -4)
 
-	var dcs : Array[Vector2i] = []
-	for key in districts: 
-		var c : Vector2i = districts[key]["center"]
-		dcs.append(c)
+	if debug: await redraw_and_pause(8, 0.1)
+
+	district_manager.update_district_data(id_grid, district_flag_struct)
+	var district_centers : Array[Vector2i] = district_manager.get_district_centers()
 	
-	roads = add_roads(id_grid, dcs, true) # DEBUGGING
+	roads = add_roads(id_grid, district_centers, true) # DEBUGGING
 	if debug: await redraw_and_pause(10)
+	return
 
-	id_grid = increase_array_resolution(id_grid, 2.0)
-	squareSize = squareSize / float(2)
+	# id_grid = increase_array_resolution(id_grid, 2.0)
+	# squareSize = squareSize / 2.0
+	district_manager.update_district_data(id_grid, district_flag_struct)
 
-	for key in districts.keys():
-		var center : Vector2i = districts[key]["center"]
-		districts[key]["center"] = Vector2i(floor(center[0] * 2.0), floor(center[1] * 2.0))
-		districts[key]["size"] *= 2
+	# Select districts and add borders to them
+	var sorted_keys : Array = district_manager.get_keys_sorted_by_attribute("size_", false)
 
-	districts_add_bounding_boxes(id_grid, districts) 
-	var sumPercent : float = 0.0
-
-	var sortedKeys : Array = []
-	for key in districts.keys():
-		sortedKeys.append([key, districts[key]["size"]]) 
-	sortedKeys.sort_custom(_sort_by_second_element_reverse)
-	
-	for key in sortedKeys:
-		key = key[0] 
-		if sumPercent >= 0.7: break
-		voronoi_district(id_grid, key, districts[key]["bounding"])
-		sumPercent += districts[key]["sizePercent"]
-		print(sumPercent)
-		# id_grid = add_district_border(id_grid, key, bbs[key])
-
-	id_grid = indentify_walls(id_grid)
-	id_grid = expand_id_grid(id_grid, [2, -3])
-		
+	for i in range(3):
+		var district : District = district_manager.get_district(sorted_keys[i])
+		district.render_border = true
 	if debug: await redraw_and_pause(11)
+
 	
-	for key in districts.keys(): 
-		break
-		roads = get_locations_in_district(id_grid, key, districts[key]["bounding"], pow(districts[key]["size"] * 0.05 / PI, 1.0/3.0))
+	# TODO: Setup key loctions in district manager if applicable
+	# for key in districts.keys(): 
+	# 	break
+	# 	roads = get_locations_in_district(id_grid, key, districts[key]["bounding"], pow(districts[key]["size"] * 0.05 / PI, 1.0/3.0))
 		
-		#TODO: Max width is probably a better metric
-	if debug: await redraw_and_pause(12)
+	# 	#TODO: Max width is probably a better metric
 
-	for key in districts.keys():
-		#break
-		id_grid = add_district_center(id_grid, key, districts[key]["bounding"], districts[key]["center"],sqrt(districts[key]["size"] * 0.05 / PI))
+	# if debug: await redraw_and_pause(12)
+
+	# # TODO: Setup district centers in district manager
+	# for key in districts.keys():
+	# 	id_grid = add_district_center(id_grid, key, districts[key]["bounding"], districts[key]["center"],sqrt(districts[key]["size"] * 0.05 / PI))
 		
-
-	if debug: await redraw_and_pause(13)
+	# if debug: await redraw_and_pause(13)
 	
 func _draw() -> void: 
 	draw_from_id_grid() 
@@ -160,7 +137,7 @@ func _draw() -> void:
 
 func draw_roads(): 
 	for r in roads: 
-		draw_line(squareSize * Vector2(r[0][0], r[0][1]), squareSize * Vector2(r[1][0], r[1][1]), Color.BLUE, 1.0)
+		draw_line(squareSize * Vector2(r.first[0], r.first[1]), squareSize * Vector2(r.second[0], r.second[1]), Color.BLUE, 1.0)
 
 func draw_bounding_box(col : Color, ss : float, line_width : float, tl : Vector2i, br : Vector2i) -> void: 
 	# Convert the points to top-left and bottom-right for consistent rectangle rendering
@@ -202,5 +179,22 @@ func draw_from_id_grid() -> void:
 		var col = colors_dict[val] if val in colors_dict else get_random_color(id_grid[x][y])
 		var rect : Rect2 = Rect2(Vector2(x*squareSize,y*squareSize), Vector2(squareSize, squareSize))
 
+		#print(district_manager)
+		#if district_manager and district_manager.get_district(val).render_border: 
+		if district_manager: 
+			var district = district_manager.get_district(val)
+			if district and district.render_border: 
+				col = Color.PURPLE
+
 		# Draw the rect
 		draw_rect(rect, col)
+	
+	if not district_manager: return
+	var borders_to_render : Array[Vector2i] = district_manager.get_borders_to_render()
+	for pos in borders_to_render: 
+		
+		# Get the color and position of the node 
+		var rect : Rect2 = Rect2(Vector2(pos.x*squareSize,pos.y*squareSize), Vector2(squareSize, squareSize))
+
+		# Draw the rect
+		draw_rect(rect, Color.YELLOW)
