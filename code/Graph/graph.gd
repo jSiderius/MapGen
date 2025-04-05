@@ -136,11 +136,16 @@ func get_mst(_sorted : bool = false) -> Array[Edge]:
 		
 # 	return id_grid
 
-func maximal_non_intersecting_edge_set() -> Array: 
+func maximal_non_intersecting_edge_set() -> Array[Edge]: 
 	'''
 		Purpose: 
 			Creates and returns a maximal edge set of the graph such that no edge in the set overlaps
 			NOTE: If the method is pursued further there is a technique that maximizes the angle between all edges to minimize slivers
+		
+		Arguments: none, uses data in the Graph class
+
+		Return: 
+			Array[Edge]: the maximal non-intersecting edge set
 	'''
 	
 	# Create an empty helper graph
@@ -195,14 +200,30 @@ func point_in_bounding_box(b1 : Vector2, b2 : Vector2, p : Vector2) -> bool:
 	return p.x >= min_bounding.x and p.x <= max_bounding.x and p.y >= min_bounding.y and p.y <= max_bounding.y
 
 func add_edge_set_to_grid(id_grid : Array, edge_set : Array[Edge]) -> Array: 
+	'''
+		Purpose: 
+			Add a set (Array) of Edges to an ID grid using the A* algorithm
+		
+		Arguments: 
+			id_grid: 
+				The 2D ID grid for the algorithm
+			edge_set: 
+				The set of edges, for each a path will be added between the 2 points in 'id_grid'
+
+		Return: 
+			Array: 'id_grid' manipulated by the algorithm
+
+	'''
+
 	for edge in edge_set: 
 		var route : Array[Vector2i] = a_star(id_grid, edge.first, edge.second)
 		id_grid = positions_to_roads(id_grid, route)
 	
 	return id_grid
 
-# func is_sparse() -> bool: 
-# 	return len(edges) * log(len(edges)) < len(edges) + len(vertices) * log(len(vertices))
+func is_sparse() -> bool: 
+	''' Returns a boolean determining if the graph is sparse by the formula E * log(E) < E + V * log(V) '''
+	return len(edges) * log(len(edges)) < len(edges) + len(vertices) * log(len(vertices))
 
 # # Takes edges [[Vector2, Vector2] ... ] and vertices [Vector2 ... ] defining a graph G(V,E) 
 # # Runs dijkstras and returns a dict of the distances from all nodes to all nodes and a dictionary indicating the one step path of any node to any node 
@@ -255,44 +276,75 @@ func add_edge_set_to_grid(id_grid : Array, edge_set : Array[Edge]) -> Array:
 
 # 	return outgoing
 
-# Takes an ID array, start and end vectors (Vector2) and an array of previously visited nodes
-# Custom implemenation of the A* algorithm using random weight additions, sets visited values to road (-1)
 func a_star(id_grid : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i]: 
-	''' TODO: Working but needs docs '''
+	'''
+		Purpose:
+			Use the A* Algorithm to determine the path between 2 points in an ID grid
+
+		Arguments: 
+			id_grid: 
+				the 2D grid for the algorithm
+			start: 
+				the start point (arbitrary)
+			end: 
+				the end point (arbitrary)
+
+		Return: 
+			Array[Vector2i]: An array of every point in the discovered path
+	'''
 	
+	# TODO: Verify the best system for random weighting
 	if randWeights == []: 
 		init_rand_weights(id_grid)
 	
-	var prev : Dictionary = {}
-	var dist : Dictionary = {}
-	var pq : PriorityQueue = pqLoad.new()
+	# Initialize data structures
+	var prev : Dictionary = {} # Dict for the previous node a node comes from
+	var dist : Dictionary = {} # Dict for distance of a node from the start
+	var pq : PriorityQueue = pqLoad.new() # priority queue 
+
+	# Set up the initial node in the priority queue
 	pq.insert(start, 0)
 	prev[start] = null 
 	dist[start] = 0
-	while not pq.is_empty() and end not in prev: 
+
+	# Iterate while we have not found the end (TODO: error handling for the pq.is_empty case)
+	while not pq.is_empty() and end not in prev:
+		
+		# Get the min node
 		var curr : Vector2i = pq.pop_min()
 
-		for n in four_neighbors:
-			# Get and screen neighbor  
-			n = Vector2i(n.x+curr[0], n.y+curr[1])
-			if not bounds_check(int(n.x), int(n.y), len(id_grid), len(id_grid[0])): continue
+		# Iterate the nodes horizontal neighbors
+		for n in neighbors:
+			
+			# Get the global position of the neighbor
+			n = n + curr
+
+			# Bounds check the neighbor position
+			if not bounds_check(n.x, n.y, len(id_grid), len(id_grid[0])): continue
+
+			# Check if the neighbor is the goal and handle accordingly
 			if n == end:
 				prev[end] = curr
 				dist[end] = dist[curr] + 1
 				break
 
+			# Calculate the heuristic cost of the neighbor (see https://brilliant.org/wiki/a-star-search/)
 			var g_n : float = 1 + randWeights[n.x][n.y]
 			var h_n = abs(n.x - end.x) + abs(n.y - end.y) 
 			var f_n = g_n + h_n
 
+			# Skip if the neighbor has been observed a cost less than the distance to the current node plus the travel cost to the neighbor
 			if n in dist and dist[n] <= dist[curr]+g_n: continue  
 
+			# Track the neighbor in the data structures
 			pq.insert_or_reduce(n, f_n)
 			prev[n] = curr 
-			dist[n] = dist[curr] + randWeights[n.x][n.y] + 1
+			dist[n] = dist[curr] + g_n
 
 	var _path : Array[Vector2i] = []
-	if end not in prev: return path
+	if end not in prev: return _path
+
+	# Reconstruct the path from the 'prev' dictionary
 	var reconstruct : Vector2i = prev[end]
 	while reconstruct != start:
 		_path.append(reconstruct)

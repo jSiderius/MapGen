@@ -86,9 +86,6 @@ func get_locations_in_district(id_grid : Array, id : int, boundingBox : Array, e
 	var locations = select_random_items(districtNodes, 100) #floor(len(districtNodes) * 0.005)) 
 	return add_roads(id_grid, locations, true)
 
-	# return id_grid
-
-
 
 func replace_ID(id_grid : Array, elimID : int, replacementID : int) -> void: 
 	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 

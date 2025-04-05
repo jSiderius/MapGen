@@ -45,10 +45,10 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(1, 0.1)
 	
 	# Create a voronoi cell map, and clear cells from id_grid that correspond to voronoi edge cells, creating a city outline
-	var voronoi_id_array : Array = generate_id_array_with_voronoi_cells(width, height, 100)
-	var edge_cell_ids : Array = find_unique_edge_cell_ids(voronoi_id_array) # var edge_cell_ids : Array = find_unique_rightside_border_cell_ids(id_grid, 2) # TODO: Decide if this is necessary / will be used long term, if so create some kind of argument to abstract which borders will be chosen
-	voronoi_id_array = overwrite_cells_by_id(voronoi_id_array, edge_cell_ids, 2)
-	id_grid = copy_designated_ids(voronoi_id_array, id_grid, [2])
+	# var voronoi_id_array : Array = generate_id_array_with_voronoi_cells(width, height, 100)
+	# var edge_cell_ids : Array = find_unique_edge_cell_ids(voronoi_id_array) # var edge_cell_ids : Array = find_unique_rightside_border_cell_ids(id_grid, 2) # TODO: Decide if this is necessary / will be used long term, if so create some kind of argument to abstract which borders will be chosen
+	# voronoi_id_array = overwrite_cells_by_id(voronoi_id_array, edge_cell_ids, 2)
+	# id_grid = copy_designated_ids(voronoi_id_array, id_grid, [2])
 	if debug: await redraw_and_pause(2, 0.1)
 	
 	# Run trials of cellular automata on the remaining {0,1} noise values 
@@ -74,13 +74,6 @@ func _ready() -> void:
 	# TODO: PATHS RANDOMLY FROM THE EDGE OF THE CENTER DISTRICT TO THE EDGE OF THE SCREEN
 	# get_outgoing_path_locations(id_grid, district_manager)
 	
-	# TODO: DETERMINES PATHING BETWEEN MAJOR ROADS
-	# roads = add_roads(id_grid, locs, true)
-
-	# TODO: ORIGINAL PURPOSE WAS TO SUBDIVIDE A DISTRICT INTO SMALLER VORONOI DISTRICTS, MAY NOT BE NECESSARY
-	# voronoi_district(id_grid, centerDistrict, districts[centerDistrict]["bounding"])
-	# if debug: await redraw_and_pause(7, 0.1)
-
 	# Ensure there are no inside districts (common bug) TODO: Could assess the cause but this is fine too
 	id_grid = flood_fill_elim_inside_terrain(id_grid)
 	if debug: await redraw_and_pause(7, 0.1)
@@ -130,7 +123,7 @@ func _ready() -> void:
 	
 func _draw() -> void: 
 	draw_from_id_grid() 
-	draw_roads()
+	# draw_roads()
 	for key in districts.keys():
 		# draw_bounding_box(get_random_color(key), squareSize, 5, districts[key]["bounding"][0], districts[key]["bounding"][1])
 		pass
