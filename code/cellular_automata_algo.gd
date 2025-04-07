@@ -120,7 +120,7 @@ func expand_id_grid_instance(id_grid : Array, pos : Vector2i, active_expansion_c
 	if id_grid[pos.x][pos.y] <= 2: return
 	
 	# Determine if any neighbors are valid for expansion
-	for n in neighbors: 
+	for n in four_neighbors: 
 		var n_pos : Vector2i = pos + n
 
 		# Ensure the neighbor is within the bounds, and has an ID that is valid for expansion

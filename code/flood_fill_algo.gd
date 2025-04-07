@@ -62,7 +62,8 @@ func flood_fill_solve_group(id_grid : Array, initial_pos : Vector2i, new_id : in
 		var pos : Vector2i = valid_positions.pop_back()
 	
 		# Iterate all the positions neighbors
-		for n in neighbors:
+		# for n in neighbors:
+		for n in four_neighbors:
 			var n_pos : Vector2i = pos + n 
 			
 			# Ensure the neighbor is in bounds of the grid and it's value is 'target_id' otherwise continue

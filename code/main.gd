@@ -4,7 +4,7 @@ extends "res://code/flood_fill_algo.gd"
 
 # export variables
 @export var debug : bool = true
-@export var squareSize : float = 10.0
+@export var square_size : float = 10.0
 @export var threshold : float = 0.01
 
 # Needs to be global for _draw()
@@ -29,10 +29,10 @@ func _ready() -> void:
 	rng.randomize()
 
 	var screenSize : Vector2 = get_viewport_rect().size
-	var w_h : Vector2 = find_width_and_height(screenSize, squareSize)
+	var w_h : Vector2 = find_width_and_height(screenSize, square_size)
 	var width : int = int(w_h[0])
 	var height : int = int(w_h[1])
-	screenSize = update_screen_size(width, height, squareSize) 
+	screenSize = update_screen_size(width, height, square_size) 
 
 	# var backgrounds : Array = [$BGSpring, $BGFall, $BGWinter]
 	# backgrounds[randi()%3].visible = true
@@ -52,21 +52,38 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(2, 0.1)
 	
 	# Run trials of cellular automata on the remaining {0,1} noise values 
-	id_grid = cellular_automata_trials(id_grid, [4,5,5,5])
-	if debug: await redraw_and_pause(3, 0.1)
+	# id_grid = cellular_automata_trials(id_grid, [4,5,5,5])
+	# if debug: await redraw_and_pause(3, 0.1)
+
+	id_grid = cellular_automata_trials(id_grid, [3])
+	if debug: await redraw_and_pause(3, 1.0)
+
+	id_grid = cellular_automata_trials(id_grid, [6])
+	if debug: await redraw_and_pause(3, 1.0)
+
+	# id_grid = cellular_automata_trials(id_grid, [6])
+	# if debug: await redraw_and_pause(3, 1.0)
+
+	# id_grid = cellular_automata_trials(id_grid, [4])
+	# if debug: await redraw_and_pause(3, 1.0)
+
+	# id_grid = cellular_automata_trials(id_grid, [4])
+	# if debug: await redraw_and_pause(3, 1.0)
 	
+	id_grid = add_slanted_line(id_grid, Vector2(0, 0), Vector2(len(id_grid[0]), len(id_grid)))
+	if debug: await redraw_and_pause(3, 1.0)
+
 	# Run flood fill to differentiate groups
 	id_grid = flood_fill(id_grid)
 	if debug: await redraw_and_pause(4, 0.1)
 
 	
-	
 	# Parse out the smallest groups 
-	id_grid = parse_smallest_districts(id_grid, district_manager, 25) 
+	id_grid = parse_smallest_districts(id_grid, district_manager, 75) 
 	if debug: await redraw_and_pause(5, 0.1)
 
 	# Expand groups into null space (1)
-	id_grid = expand_id_grid(id_grid, [2])
+	id_grid = expand_id_grid(id_grid, [2, -1])
 	if debug: await redraw_and_pause(6, 0.1)
 	
 	district_manager.update_district_data(id_grid, district_flag_struct)
@@ -81,7 +98,7 @@ func _ready() -> void:
 	# Increase the array resolution and add a new (thinner) border
 	var multiplier : float = 1.5
 	id_grid = increase_array_resolution(id_grid, multiplier)
-	squareSize = squareSize / float(multiplier)
+	square_size = square_size / float(multiplier)
 	add_city_border(id_grid, -4)
 
 	if debug: await redraw_and_pause(8, 0.1)
@@ -89,48 +106,33 @@ func _ready() -> void:
 	district_manager.update_district_data(id_grid, district_flag_struct)
 	var district_centers : Array[Vector2i] = district_manager.get_district_centers()
 	
-	roads = add_roads(id_grid, district_centers, true) # DEBUGGING
+	# roads = add_roads(id_grid, district_centers, true)
 	if debug: await redraw_and_pause(10)
-	return
+	# return
 
-	# id_grid = increase_array_resolution(id_grid, 2.0)
-	# squareSize = squareSize / 2.0
+	id_grid = increase_array_resolution(id_grid, 2.0)
+	square_size = square_size / 2.0
 	district_manager.update_district_data(id_grid, district_flag_struct)
 
 	# Select districts and add borders to them
 	var sorted_keys : Array = district_manager.get_keys_sorted_by_attribute("size_", false)
 
-	for i in range(3):
+	for i in range(len(sorted_keys)):
 		var district : District = district_manager.get_district(sorted_keys[i])
 		district.render_border = true
+
 	if debug: await redraw_and_pause(11)
-
-	
-	# TODO: Setup key loctions in district manager if applicable
-	# for key in districts.keys(): 
-	# 	break
-	# 	roads = get_locations_in_district(id_grid, key, districts[key]["bounding"], pow(districts[key]["size"] * 0.05 / PI, 1.0/3.0))
-		
-	# 	#TODO: Max width is probably a better metric
-
-	# if debug: await redraw_and_pause(12)
-
-	# # TODO: Setup district centers in district manager
-	# for key in districts.keys():
-	# 	id_grid = add_district_center(id_grid, key, districts[key]["bounding"], districts[key]["center"],sqrt(districts[key]["size"] * 0.05 / PI))
-		
-	# if debug: await redraw_and_pause(13)
 	
 func _draw() -> void: 
 	draw_from_id_grid() 
 	# draw_roads()
 	for key in districts.keys():
-		# draw_bounding_box(get_random_color(key), squareSize, 5, districts[key]["bounding"][0], districts[key]["bounding"][1])
+		# draw_bounding_box(get_random_color(key), square_size, 5, districts[key]["bounding"][0], districts[key]["bounding"][1])
 		pass
 
 func draw_roads(): 
 	for r in roads: 
-		draw_line(squareSize * Vector2(r.first[0], r.first[1]), squareSize * Vector2(r.second[0], r.second[1]), Color.BLUE, 1.0)
+		draw_line(square_size * Vector2(r.first[0], r.first[1]), square_size * Vector2(r.second[0], r.second[1]), Color.BLUE, 1.0)
 
 func draw_bounding_box(col : Color, ss : float, line_width : float, tl : Vector2i, br : Vector2i) -> void: 
 	# Convert the points to top-left and bottom-right for consistent rectangle rendering
@@ -170,7 +172,7 @@ func draw_from_id_grid() -> void:
 
 		# Get the color and position of the node 
 		var col = colors_dict[val] if val in colors_dict else get_random_color(id_grid[x][y])
-		var rect : Rect2 = Rect2(Vector2(x*squareSize,y*squareSize), Vector2(squareSize, squareSize))
+		var rect : Rect2 = Rect2(Vector2(x*square_size,y*square_size), Vector2(square_size, square_size))
 
 		#print(district_manager)
 		#if district_manager and district_manager.get_district(val).render_border: 
@@ -187,7 +189,45 @@ func draw_from_id_grid() -> void:
 	for pos in borders_to_render: 
 		
 		# Get the color and position of the node 
-		var rect : Rect2 = Rect2(Vector2(pos.x*squareSize,pos.y*squareSize), Vector2(squareSize, squareSize))
+		var rect : Rect2 = Rect2(Vector2(pos.x*square_size,pos.y*square_size), Vector2(square_size, square_size))
 
 		# Draw the rect
 		draw_rect(rect, Color.YELLOW)
+
+func add_center_line(_id_grid : Array) -> Array:
+	#for i in range(len(_id_grid[0])): 
+		#_id_grid[floor(len(_id_grid) / 2.0)][i] = 1
+	var offset : int = 0
+	for i in range(len(_id_grid[0])): 
+		if randf() < 0.1: offset += (randi() % 2)
+		_id_grid[floor(len(_id_grid) / 2.0) + offset][i] = -1
+		
+	offset = 0
+	for i in range(len(_id_grid)):
+		if randf() < 0.1: offset += (randi() % 2)
+		_id_grid[i][floor(len(_id_grid[0]) / 2.0) + offset] = -1
+		
+	# MIN_UNIQUE_ID += 1
+	return _id_grid
+
+func add_slanted_line(_id_grid: Array, start: Vector2, end: Vector2) -> Array:
+	var dx = end.x - start.x
+	var dy = end.y - start.y
+	var steps = int(max(abs(dx), abs(dy)))
+	
+	var offset = 0
+	
+	for i in range(steps + 1):
+		var t = float(i) / float(steps)
+		var x = int(round(lerp(start.x, end.x, t)))
+		var y = int(round(lerp(start.y, end.y, t)))
+		
+		if randf() < 0.1:
+			offset += (randi() % 3) - 1  # -1, 0, or +1
+		var ox = x + offset
+		var oy = y + offset
+		
+		if oy >= 0 and oy < _id_grid.size() and ox >= 0 and ox < _id_grid[0].size():
+			_id_grid[oy][ox] = -1
+	
+	return _id_grid

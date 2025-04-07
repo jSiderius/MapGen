@@ -369,5 +369,5 @@ func init_rand_weights(id_grid : Array):
 
 func positions_to_roads(id_grid : Array, route : Array[Vector2i]) -> Array: 
 	for node in route: 
-		id_grid[node[0]][node[1]] = -1 
+		id_grid[node[0]][node[1]] = 2
 	return id_grid

@@ -180,6 +180,10 @@ func get_district_centers() -> Array[Vector2i]:
 	
 	return district_centers
 
+func get_num_districts() -> int: 
+	''' Returns the number of districts which are being tracked by the manager '''
+	return len(districts_dict.keys())
+	
 func get_district(key : int) -> District:
 	''' TODO: Ensure values '''
 	''' Returns a district from 'districts_dict' if it exists '''
