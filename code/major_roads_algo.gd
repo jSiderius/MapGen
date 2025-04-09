@@ -6,6 +6,8 @@ var edge : Resource = preload("res://code/Graph/edge.gd")
 # Takes an ID array
 # Determines the set of major roads between district centers, sets them in the array, returns 
 func add_roads(id_grid : Array, vertices : Array[Vector2i], colorVert : bool = false) -> Array: 
+	# TODO: Document
+	# TODO: Reassess if it becomes relevant
 	
 	# print("Looking for MST on ", len(vertices), " vertices")
 
@@ -23,11 +25,11 @@ func add_roads(id_grid : Array, vertices : Array[Vector2i], colorVert : bool = f
 	# g.add_modified_mst2(id_grid)
 
 	for v in vertices: 
-		id_grid[v[0]][v[1]] = -2 if colorVert else -1
+		id_grid[v[0]][v[1]] = Enums.Cell.DISTRICT_CENTER if colorVert else Enums.Cell.MAJOR_ROAD # TODO: ???
 	
 	return mst
 
-# TODO: Use bounding box
+# TODO: what is this function?
 # func get_outgoing_path_locations(id_grid : Array, district_manager : DistrictManager): 
 # 	var districtBorderNodes : Array[Vector2i] = []
 # 	var edgeNodes : Array[Vector2i] = []

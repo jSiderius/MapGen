@@ -45,7 +45,7 @@ func cellular_automata(id_grid : Array, threshold : int) -> Array:
 		for y in range(len(id_grid[x])): 
 
 			# If an ID is not 0 or 1 it is ignored by the algorithm and maintains it's value
-			if id_grid[x][y] not in [0,1]: 
+			if id_grid[x][y] not in [Enums.Cell.VOID_SPACE_0, Enums.Cell.VOID_SPACE_1]: 
 				new_id_grid[x].append(id_grid[x][y])
 				continue
 
@@ -53,26 +53,24 @@ func cellular_automata(id_grid : Array, threshold : int) -> Array:
 
 			# Iterate all neighbors of (x,y)
 			for n in neighbors: 
-				var n_pos = Vector2i(x + n[0], y + n[1])
+				var n_pos = Vector2i(x, y) + n
 				
 				# Check that n_pos is in bounds
-				if not bounds_check(n_pos.x, n_pos.y, len(id_grid), len(id_grid[x])): continue 
+				if not bounds_check(n_pos, Vector2i(len(id_grid), len(id_grid[x]))): continue 
 
 				# Update the num_neighbors counter (+1 if 1, no change if 0)
 				num_neighbors += id_grid[n_pos.x][n_pos.y]
 			
 			# Set the value in the new grid according to the number of neighbors and the threshold 
-			new_id_grid[x].append(1 if num_neighbors >= threshold else 0)
+			new_id_grid[x].append(Enums.Cell.VOID_SPACE_1 if num_neighbors >= threshold else Enums.Cell.VOID_SPACE_1)
 	
 	return new_id_grid
 
-func maintain_edge(id_grid : Array, val : int = 0): 
+func set_grid_edge(id_grid : Array, val : int = Enums.Cell.VOID_SPACE_0): 
 	''' Sets every edge cell in the grid to a designated value'''
-	# TODO: if a edge iteration method is created add it here
-	# TODO: Drop this method if it isn't used
 
 	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
-		if is_edge(x, y, len(id_grid), len(id_grid[x])): 
+		if is_edge(Vector2i(x, y), Vector2i(len(id_grid), len(id_grid[x]))): 
 			id_grid[x][y] = val
 
 
@@ -124,7 +122,7 @@ func expand_id_grid_instance(id_grid : Array, pos : Vector2i, active_expansion_c
 		var n_pos : Vector2i = pos + n
 
 		# Ensure the neighbor is within the bounds, and has an ID that is valid for expansion
-		if not bounds_check(n_pos.x, n_pos.y, len(id_grid), len(id_grid[pos.x])): continue
+		if not bounds_check(n_pos, Vector2i(len(id_grid), len(id_grid[pos.x]))): continue
 		if id_grid[n_pos.x][n_pos.y] > 2 or id_grid[n_pos.x][n_pos.y] in autonomous_ids: continue
 
 		# Set the neighbors value and add it to the active expansion cells

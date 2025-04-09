@@ -9,8 +9,8 @@ func generate_random_grid(width : int, height : int, alt_edges : bool = false) -
 	for x in width:
 		newBoolGrid.append([])
 		for y in height:
-			if alt_edges and is_edge(x,y,width,height):
-				newBoolGrid[x].append(1)
+			if alt_edges and is_edge(Vector2i(x, y), Vector2i(width, height)):
+				newBoolGrid[x].append(Enums.Cell.VOID_SPACE_1)
 				continue 
 			newBoolGrid[x].append(randi() % 2)
 	
@@ -23,5 +23,5 @@ func generate_empty_id_array(width : int, height : int) -> Array:
 	for x in width: 
 		newIdArray.append([])
 		for y in range(height): 
-			newIdArray[x].append(0)
+			newIdArray[x].append(Enums.Cell.VOID_SPACE_0)
 	return newIdArray

@@ -88,12 +88,12 @@ func find_unique_edge_cell_ids(id_grid : Array) -> Array:
 		var cell_id : int = id_grid[x][y]
 
 		# Check if the cell is an edge cell and the cell's ID is not already in the set 
-		if is_edge(x, y, len(id_grid), len(id_grid[x])) and not cell_id in edge_cell_ids: #TODO: probably some more intuitvie way to clear this as a set like a dict
+		if is_edge(Vector2i(x, y), Vector2i(len(id_grid), len(id_grid[x]))) and not cell_id in edge_cell_ids: #TODO: probably some more intuitvie way to clear this as a set like a dict
 			edge_cell_ids.append(cell_id)
 	
 	return edge_cell_ids
 
-func overwrite_cells_by_id(id_grid : Array, ids_to_overwrite : Array, new_cell_id : int = 0) -> Array: 
+func overwrite_cells_by_id(id_grid : Array, ids_to_overwrite : Array, new_cell_id : int = Enums.Cell.VOID_SPACE_0) -> Array: 
 	'''
 		Purpose: 
 			Overwrites all cells in a 2D grid which are designated to be overwritten with a passed value
@@ -119,7 +119,7 @@ func overwrite_cells_by_id(id_grid : Array, ids_to_overwrite : Array, new_cell_i
 			
 	return id_grid
 
-func copy_designated_ids(from_grid : Array, to_grid : Array, ids_to_copy : Array) -> Array:
+func copy_designated_ids(from_grid : Array, to_grid : Array, ids_to_copy : Array, autonomous_ids : Array = []) -> Array:
 	'''
 		Purpose:
 			Copy any cell with a designated ID from 'from_grid' to 'to_grid'
@@ -143,7 +143,7 @@ func copy_designated_ids(from_grid : Array, to_grid : Array, ids_to_copy : Array
 	for x in range(len(to_grid)): for y in range(len(to_grid[x])):
 
 		# If the ID in 'from_grid' is in 'ids_to_copy' set the ID in 'to_grid' to that value
-		if from_grid[x][y] in ids_to_copy: 
+		if from_grid[x][y] in ids_to_copy and not to_grid[x][y] in autonomous_ids:
 			to_grid[x][y] = from_grid[x][y]
 	
 	return to_grid
@@ -178,47 +178,12 @@ func voronoi_district(id_grid : Array, id : int, boundingBox : Array):
 			if id_grid[x][y] != id: continue
 
 			for n in neighbors:
-				var newX : int = x + n[0]
-				var newY : int = y + n[1]
+				var n_pos : Vector2i = Vector2i(x, y) + n
 
-				if not bounds_check(newX, newY, len(voronoiRepresentation), len(voronoiRepresentation[0])): continue
-				var district_border : bool = id_grid[newX][newY] > 2 and id_grid[newX][newY] != id
-				var voronoi_border : bool = voronoiRepresentation[newX][newY] != voronoiRepresentation[x][y] and x <= newX and y <= newY
+				if not bounds_check(n_pos , Vector2i(len(voronoiRepresentation), len(voronoiRepresentation[0]))): continue
+				var district_border : bool = id_grid[n_pos.x][n_pos.y] > 2 and id_grid[n_pos.x][n_pos.y] != id
+				var voronoi_border : bool = voronoiRepresentation[n_pos.x][n_pos.y] != voronoiRepresentation[x][y] and x <= n_pos.x and y <= n_pos.y
 				if district_border or voronoi_border: 
 					id_grid[x][y] = -4
 	
 	# MIN_UNIQUE_ID += len(locations)
-
-''' TODO: Holding off on docs for this because if I use it again I'll probably override with some modular way to select right, left, up, down, and corners '''
-func find_unique_rightside_border_cell_ids(id_grid : Array, trials : int = 1) -> Array:
-	'''
-		Purpose: 
-
-		Args: 
-		
-		Returns: 
-	'''
-
-	var edgeCells : Array = []
-	for x in range(len(id_grid)): for y in range(len(id_grid[x])): #TODO: See 'TODO' in find_unique_edge_cell_ids
-		var cell_id : int = id_grid[x][y]
-
-		# Check if the cell is adjacent to the right edge and the cell's ID is not already in the set
-		if x + 1 == len(id_grid) and cell_id not in edgeCells: 
-			edgeCells.append(cell_id)
-
-	# Extend the depth ie. trials = 2 is border or bordering a border, ...
-	# TODO: refactor and/or document for
-	for i in range(trials - 1): 
-		var edgeCellsNext : Array = []
-		for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
-			for n in four_neighbors: 
-				var newX : int = x + n[0]
-				var newY : int = y + n[1]
-
-				if not bounds_check(newX, newY, len(id_grid), len(id_grid[x])): continue
-				if id_grid[newX][newY] in edgeCells and id_grid[newX][newY] not in edgeCellsNext: 
-					edgeCellsNext.append(id_grid[newX][newY])
-		edgeCells.append_array(edgeCellsNext)
-		
-	return edgeCells

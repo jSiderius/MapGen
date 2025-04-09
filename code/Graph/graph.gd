@@ -2,6 +2,7 @@ extends "res://code/helpers.gd"
 
 class_name Graph 
 
+# TODO: Finish documentation and assessment if it becomes relevant
 var edges : Array[Edge]
 var vertices : Array[Vector2i]
 #var pqLoad : Resource = preload("res://code/priority_queue.gd")
@@ -320,7 +321,7 @@ func a_star(id_grid : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i
 			n = n + curr
 
 			# Bounds check the neighbor position
-			if not bounds_check(n.x, n.y, len(id_grid), len(id_grid[0])): continue
+			if not bounds_check(n, Vector2i(len(id_grid), len(id_grid[0]))): continue
 
 			# Check if the neighbor is the goal and handle accordingly
 			if n == end:

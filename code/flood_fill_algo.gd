@@ -1,7 +1,6 @@
 extends "res://code/cellular_automata_algo.gd"
-# extends "res://code/voronoi_overlay_algo.gd"
 
-func flood_fill(id_grid : Array, target_id : int = 0) -> Array: 
+func flood_fill(id_grid : Array, target_id : int = Enums.Cell.VOID_SPACE_0) -> Array: 
 	'''
 		Purpose: 
 			Uses the flood fill algorithm to identify differentiated regions of cells with a designated ID, and sets new ID's which are unique by region
@@ -31,7 +30,7 @@ func flood_fill(id_grid : Array, target_id : int = 0) -> Array:
 	
 	return id_grid
 
-func flood_fill_solve_group(id_grid : Array, initial_pos : Vector2i, new_id : int, target_id : int = 0) -> Array:
+func flood_fill_solve_group(id_grid : Array, initial_pos : Vector2i, new_id : int, target_id : int = Enums.Cell.VOID_SPACE_0) -> Array:
 	'''
 		Purpose: 
 			Set all cells with an ID of 'target_id' that are spatially connected to 'initial_pos' to 'new_id'
@@ -67,7 +66,7 @@ func flood_fill_solve_group(id_grid : Array, initial_pos : Vector2i, new_id : in
 			var n_pos : Vector2i = pos + n 
 			
 			# Ensure the neighbor is in bounds of the grid and it's value is 'target_id' otherwise continue
-			if not bounds_check(n_pos.x, n_pos.y, id_grid.size(), id_grid[0].size()): continue
+			if not bounds_check(n_pos, Vector2i(id_grid.size(), id_grid[0].size())): continue
 			if not id_grid[n_pos.x][n_pos.y] == target_id: continue 
 
 			# Add the neighbor to the active array and set its value to 'new_id'
@@ -93,19 +92,19 @@ func flood_fill_elim_inside_terrain(id_grid : Array) -> Array:
 			Array: 'id_grid manipulated by the algorithm'
 	'''
 
-	# Flood fill the edge group from (0,0) and replace values of '2' with '0'
-	id_grid = flood_fill_solve_group(id_grid, Vector2(0,0), 0, 2)
+	# Flood fill the edge group from (0,0) and replace values of OUTSIDE_SPACE with VOID_SPACE_0
+	id_grid = flood_fill_solve_group(id_grid, Vector2(0,0), Enums.Cell.VOID_SPACE_0, Enums.Cell.OUTSIDE_SPACE)
 
-	# Replace any remaining values of '2' with a new group
+	# Replace any remaining values of OUTSIDE_SPACE with a new group
 	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
 		if id_grid[x][y] == 2: id_grid[x][y] = MIN_UNIQUE_ID
 	MIN_UNIQUE_ID += 1
 	
-	# Flood fill the edge group from '0' back to '2'
-	id_grid = flood_fill_solve_group(id_grid, Vector2(0,0), 2, 0)
+	# Flood fill the edge group from VOID_SPACE_0 back to OUTSIDE_SPACE
+	id_grid = flood_fill_solve_group(id_grid, Vector2(0,0), Enums.Cell.OUTSIDE_SPACE, Enums.Cell.VOID_SPACE_0)
 	return id_grid
 
-func add_city_border(id_grid : Array, border_value : int = -4) -> Array:
+func add_city_border(id_grid : Array, border_value : int = Enums.Cell.DISTRICT_WALL) -> Array:
 	''' Adds a border of cells with value 'border_value' between null space (2) and district space (>2) '''
 
 	id_grid = add_rough_city_border(id_grid, border_value)
@@ -114,7 +113,7 @@ func add_city_border(id_grid : Array, border_value : int = -4) -> Array:
 
 	return id_grid
 
-func validate_city_border(id_grid : Array, border_value : int = -4) -> Array:
+func validate_city_border(id_grid : Array, border_value : int = Enums.Cell.CITY_WALL) -> Array:
 	'''   
 		Purpose: 
 			Validates the border by ensuring every cell with value 'border_value' borders null space (2)
@@ -137,12 +136,12 @@ func validate_city_border(id_grid : Array, border_value : int = -4) -> Array:
 		if id_grid[x][y] != border_value: continue
 
 		
-		# Loop to ensure the cell neighbors null space (2)
+		# Loop to ensure the cell neighbors OUTSIDE_SPACE
 		var is_border : bool = false
 		for n in neighbors: 
 			var n_pos : Vector2i = Vector2i(x, y) + n
 			
-			if id_grid[n_pos.x][n_pos.y] == 2: 
+			if id_grid[n_pos.x][n_pos.y] == Enums.Cell.OUTSIDE_SPACE:
 				is_border = true
 				break
 		
@@ -151,11 +150,11 @@ func validate_city_border(id_grid : Array, border_value : int = -4) -> Array:
 			id_grid[x][y] = -1001
 			
 	# Expand the grid to overwrite arbitrary values
-	id_grid = expand_id_grid(id_grid, [2, border_value])
+	id_grid = expand_id_grid(id_grid, [Enums.Cell.OUTSIDE_SPACE, border_value])
 
 	return id_grid
 
-func add_rough_city_border(id_grid : Array, border_value : int = -4) -> Array:
+func add_rough_city_border(id_grid : Array, border_value : int = Enums.Cell.CITY_WALL) -> Array:
 	'''
 		Purpose: 
 			Adds a rough city border by searching from null space cells (2) and setting as borders if they have a neighboring district cell (>2)
@@ -175,7 +174,8 @@ func add_rough_city_border(id_grid : Array, border_value : int = -4) -> Array:
 	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
 
 		# Skip if the cell is not null space (2) or is on the edge
-		if id_grid[x][y] != 2 or is_edge(x, y, len(id_grid), len(id_grid[x])): continue
+		if id_grid[x][y] != Enums.Cell.OUTSIDE_SPACE: continue
+		if is_edge(Vector2i(x, y), Vector2i(len(id_grid), len(id_grid[x]))): continue
 
 		# Iterate all neighbors
 		for n in neighbors:	

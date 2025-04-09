@@ -133,11 +133,6 @@ func update_or_init_centrality_data(id_grid : Array) -> void:
 	var keys = get_keys_sorted_by_attribute("distance_to_grid_center", true)
 	center_district_id = keys[0]
 	
-	# TODO
-	# for key in keys: 
-		# if not districts[key]["windowBorder"]["any"]: return key
-	# 	return keys.pick_random()
-
 func update_or_init_bounding_data(id_grid : Array) -> void: 
 
 	# Ensure location data has been recorded
@@ -185,17 +180,28 @@ func get_num_districts() -> int:
 	return len(districts_dict.keys())
 	
 func get_district(key : int) -> District:
-	''' TODO: Ensure values '''
 	''' Returns a district from 'districts_dict' if it exists '''
-	if key not in districts_dict.keys(): return null
+
+	if key not in districts_dict: 
+		print_debug("Non-existent district requested from district manager")
+		return null
 	return districts_dict[key]
 
 func get_district_attribute(key : int, attribute : String): 
-	''' TODO: Ensure values '''
 	''' Returns an attribute from a district in 'districts_dict' if it exists '''
+
+	if key not in districts_dict: 
+		print_debug("Attribute requested from non-existent district in district manager")
+		return null
+		
+	if attribute not in districts_dict[key]:
+		print_debug("Non-existent attribute requested from district in district manager")
+		return null
 
 	return districts_dict[key][attribute]
 
+# TODO: Assess, Verify, Document
+# TODO: Improve functionality and speed
 func get_borders_to_render(): 
 	var borders_to_render : Array[Vector2i] = []
 	

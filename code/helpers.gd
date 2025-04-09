@@ -18,19 +18,17 @@ var four_neighbors : Array[Vector2i] = [
 var pqLoad : Resource = preload("res://code/priority_queue.gd")
 
 ''' The current minimum unique ID, stored globally to track ID's over the course of the program '''
-var MIN_UNIQUE_ID : int = 3
+var MIN_UNIQUE_ID : int = 3 # TODO: RIVER FIX
 
-func is_edge(x : int, y : int, x_bound : int, y_bound : int) -> bool:
-	''' Takes a position (x,y), and a boundary for the maximum of x and y and determines if (x,y) is on the edge of the grid '''
-	''' TODO: Cleaner to use vectors here'''
+func is_edge(pos : Vector2i, boundary : Vector2i) -> bool:
+	''' Takes a pos (x,y), and a boundary for the maximum of x and y and determines if (x,y) is on the edge of the grid '''
 
-	return x <=0 or y <= 0 or x >=x_bound-1 or y >= y_bound-1
+	return pos.x <=0 or pos.y <= 0 or pos.x >= boundary.x-1 or pos.y >= boundary.y-1
 
-func bounds_check(x : int, y : int, x_bound : int, y_bound : int):
+func bounds_check(pos : Vector2i, boundary : Vector2i):
 	''' Takes a position (x,y), and a boundary for the maximum of x and y and determines if (x,y) is in bounds of the grid '''
-	''' TODO: Cleaner to use vectors here'''
 
-	return x >=0 and x < x_bound and y >= 0 and y < y_bound
+	return pos.x >=0 and pos.x < boundary.x and pos.y >= 0 and pos.y < boundary.y
 
 func find_width_and_height(screen_size : Vector2, square_size : float) -> Vector2: 
 	''' Takes the screen size and square size and determines the integer size of the screen in terms of squares '''
@@ -48,14 +46,25 @@ func update_screen_size(width : int, height : int, square_size : float) -> Vecto
 
 	return screen_size
 
-func get_random_color(_seed : int) -> Color: 
-	''' Uses a seed (int) to randomly generate a color which is then unique to the seed '''
+func get_random_color(_seed : int, hardsets : Vector3 = Vector3(-1, -1, -1), scalars : Vector3 = Vector3(1.0, 1.0, 1.0)) -> Color:
+	''' Uses a seed (int) to randomly generate a color which is then unique to the seed, allows for hardsets and scaling of values to target certain gradiants '''
 
-	var r = (_seed * 1234567) % 256 / 255.0  # Random red value
-	var g = (_seed * 2345678) % 256 / 255.0  # Random green value
-	var b = (_seed * 3456789) % 256 / 255.0  # Random blue value
+	# Validate Scalar data 
+	if scalars.x < 0.0 or scalars.x > 1.0: scalars.x = 1.0
+	if scalars.y < 0.0 or scalars.y > 1.0: scalars.y = 1.0
+	if scalars.z < 0.0 or scalars.z > 1.0: scalars.z = 1.0
 	
-	return Color(0.5*r, g, b, 1.0)
+	# Select random values for the red, green, and blue spectrums
+	var r = (_seed * 1234567) % 256 / 255.0
+	var g = (_seed * 2345678) % 256 / 255.0
+	var b = (_seed * 3456789) % 256 / 255.0
+
+	# Override with hard sets if requested, otherwise apply scalars
+	r = hardsets.x if (hardsets.x >= 0 and hardsets.x <= 1) else r * scalars.x
+	g = hardsets.y if (hardsets.y >= 0 and hardsets.y <= 1) else g * scalars.y
+	b = hardsets.z if (hardsets.z >= 0 and hardsets.z <= 1) else b * scalars.z
+	
+	return Color(r, g, b, 1.0)
 
 
 var last_exit_time : float = 0.0 
@@ -84,17 +93,6 @@ func redraw_and_pause(alg : int, stall : float = 1.0, screenshot = true) -> void
 	if screenshot: take_screenshot()
 	print("\t exit redraw_and_pause()")
 	last_exit_time = Time.get_ticks_msec() / 1000.0
-
-func _sort_by_second_element(a, b):
-	''' Custom sorting function on the second element of an array '''
-
-	return a[1] < b[1]
-
-func _sort_by_second_element_reverse(a, b):
-	''' Custom sorting function on the second element of an array in reverse'''
-	''' TODO: I think I already depreciated the need for this but double check'''
-
-	return a[1] > b[1]
 
 func _sort_by_attribute(array : Array, attribute : String, ascending : bool) -> Array:
 	''' Sort a passed array by a passed attribute in ascending or descending order '''
@@ -138,3 +136,21 @@ func select_random_items(arr: Array, count: int) -> Array:
 	
 	# Take the first_screenshot `count` items
 	return temp_arr.slice(0, count)
+
+func random_edge_position(width: int, height: int) -> Vector2i:
+	''' Gives a random position on the edge of the grid '''
+	''' TODO: Small chance to not reach the edge, I don't think the bug is in this function '''
+
+	var side := randi() % 4  # 0 = top, 1 = bottom, 2 = left, 3 = right
+	
+	match side:
+		0:  # top
+			return Vector2i(randi() % width, 0)
+		1:  # bottom
+			return Vector2i(randi() % width, height - 1)
+		2:  # left
+			return Vector2i(0, randi() % height)
+		3:  # right
+			return Vector2i(width - 1, randi() % height)
+	
+	return Vector2i(0, 0) # Unreachable (for compiler)

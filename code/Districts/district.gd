@@ -18,6 +18,7 @@ func _init(_id : int):
 func set_center(id_grid : Array): 
 	'''
 		Purpose: 
+			TODO: Assess
 
 		Arguments: 
 
@@ -51,7 +52,7 @@ func set_bounding_box() -> void:
 		bounding_box_max = Vector2i(max(bounding_box_max.x, loc.x), max(bounding_box_max.x, loc.x))
 
 func set_border(id_grid : Array) -> void:
-	
+	''' TODO: Modify and document'''
 	# reset the border to empty
 	border = []
 
@@ -60,13 +61,13 @@ func set_border(id_grid : Array) -> void:
 		var n_loc : Vector2i = loc + n
 
 		# Verify the neighbor is in bounds
-		if not bounds_check(n_loc.x, n_loc.y, len(id_grid), len(id_grid[0])): continue
+		if not bounds_check( n_loc, Vector2i(len(id_grid), len(id_grid[0]))): continue
 
 		# If the neighbor is a district (>2) and not this district it is a border
 		if id_grid[n_loc.x][n_loc.y] > 2 and id_grid[n_loc.x][n_loc.y] != id:
 			border.append(loc)
 	
-
+# TODO: What is this? 
 # func add_border_to_grid(id_grid : Array) -> Array: 
 # 	#var bdr : 
 # 	for loc in locations: for n in neighbors:

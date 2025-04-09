@@ -1,6 +1,6 @@
 extends "res://code/subdivide_districts_algo.gd"
 
-func parse_smallest_districts(id_grid : Array, district_manager : DistrictManager, num_districts : int = 15, new_cell_id : int = 1) -> Array: 
+func parse_smallest_districts(id_grid : Array, district_manager : DistrictManager, num_districts : int = 15, new_cell_id : int = Enums.Cell.VOID_SPACE_1) -> Array: 
 	'''
 		Purpose: 
 			Parses the smallest districts such that only 'num_districts' districts remain
@@ -22,8 +22,6 @@ func parse_smallest_districts(id_grid : Array, district_manager : DistrictManage
 	# Create a array the groups sorted by their sizes 
 	var keys : Array = district_manager.get_keys_sorted_by_attribute("size_", true)
 
-	print(keys)
-	
 	# If there are already few enough groups return
 	if len(keys) <= num_districts: return id_grid
 	
