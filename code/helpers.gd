@@ -97,6 +97,10 @@ func redraw_and_pause(alg : int, stall : float = 1.0, screenshot = true) -> void
 func _sort_by_attribute(array : Array, attribute : String, ascending : bool) -> Array:
 	''' Sort a passed array by a passed attribute in ascending or descending order '''
 	''' TODO: Validate that the array is of objects, the attribute is valid, ... ''' 
+
+	if array.size() > 0 and attribute not in array[0]:
+		push_warning("Array items are not dictionaries or objects with accessible attributes.")
+
 	array.sort_custom(func(a, b): return (a[attribute] < b[attribute]) if ascending else (a[attribute] > b[attribute]))
 	return array
 
@@ -154,3 +158,6 @@ func random_edge_position(width: int, height: int) -> Vector2i:
 			return Vector2i(width - 1, randi() % height)
 	
 	return Vector2i(0, 0) # Unreachable (for compiler)
+
+func is_district(id : int): 
+	return id > 2

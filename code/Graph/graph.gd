@@ -15,7 +15,8 @@ func _init(e : Array[Edge], v : Array[Vector2i]) -> void:
 	vertices = v
 
 	if not validate_graph(): 
-		print("not a valid graph")
+		print_debug("not a valid graph")
+		push_error("not a valid graph")
 
 func validate_graph():
 	''' Validates that every vertex in every edge is contained in 'vertices' '''
@@ -361,11 +362,9 @@ func init_rand_weights(id_grid : Array):
 
 			# Random weighting 
 			randWeights[x].append(randf_range(0, 3))
-			# randWeights[x].append(0)
 
 			# Large weighting for city border 
-			if id_grid[x][y] == -4: 
-				print("called")
+			if id_grid[x][y] == Enums.Cell.DISTRICT_WALL: 
 				randWeights[x][y] += 10000
 
 func positions_to_roads(id_grid : Array, route : Array[Vector2i]) -> Array: 

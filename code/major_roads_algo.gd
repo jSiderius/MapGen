@@ -9,8 +9,6 @@ func add_roads(id_grid : Array, vertices : Array[Vector2i], colorVert : bool = f
 	# TODO: Document
 	# TODO: Reassess if it becomes relevant
 	
-	# print("Looking for MST on ", len(vertices), " vertices")
-
 	# Create the set of roads as a fully connected set of all vertices
 	var roads : Array[Edge] = []
 	for i in range(len(vertices)): for j in range(i+1, len(vertices)):

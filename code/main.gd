@@ -17,11 +17,11 @@ var district_flag_struct : DistrictDataFlagStruct
 var district_manager : DistrictManager
 
 
-func _ready() -> void: 
+func _ready() -> void:
 
 	district_flag_struct = district_flag_struct_loader.new(true)
 	district_manager = district_manager_loader.new(id_grid, district_flag_struct)
-
+	
 	# Initialize  variables
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
@@ -42,13 +42,13 @@ func _ready() -> void:
 	id_grid = generate_random_grid(width, height, true)
 	if debug: await redraw_and_pause(1, 0.1)
 	
-	
 	# Run trials of cellular automata on the remaining {0,1} noise values 
 	# id_grid = cellular_automata_trials(id_grid, [4,5,5,5])
 	# if debug: await redraw_and_pause(3, 0.1)
 
 	id_grid = cellular_automata_trials(id_grid, [3])
 	if debug: await redraw_and_pause(3, 1.0)
+	# return
 
 	# TODO: Document grid layout (in class maybe)
 	var river_start : Vector2i = random_edge_position(len(id_grid), len(id_grid[0]))
@@ -83,8 +83,9 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(5, 0.1)
 
 	# Expand groups into null space (1)
-	id_grid = expand_id_grid(id_grid, [Enums.Cell.OUTSIDE_SPACE, Enums.Cell.MAJOR_ROAD])
+	id_grid = expand_id_grid(id_grid, [Enums.Cell.OUTSIDE_SPACE, Enums.Cell.MAJOR_ROAD, Enums.Cell.WATER], [Enums.Cell.WATER])
 	if debug: await redraw_and_pause(6, 0.1)
+	return 
 
 	# Create a voronoi cell map, and clear cells from id_grid that correspond to voronoi edge cells, creating a city outline
 	var voronoi_id_array : Array = generate_id_array_with_voronoi_cells(width, height, 100)
@@ -124,7 +125,7 @@ func _ready() -> void:
 
 	for i in range(len(sorted_keys)):
 		var district : District = district_manager.get_district(sorted_keys[i])
-		if sorted_keys[i] == 3: continue
+		if sorted_keys[i] == Enums.Cell.WATER: continue
 		district.render_border = true
 
 	if debug: await redraw_and_pause(11)
@@ -171,15 +172,12 @@ func draw_from_id_grid() -> void:
 		
 		# Get the value of the node 
 		var val : int = id_grid[x][y]
-		# if val == 2: continue 
 
 		# Get the color and position of the node
 		var col = colors_dict[val] if val in colors_dict else get_random_color(id_grid[x][y], Vector3(1.0, -1.0, 0.0))
 		var rect : Rect2 = Rect2(Vector2(x*square_size,y*square_size), Vector2(square_size, square_size))
 
-		#print(district_manager)
-		#if district_manager and district_manager.get_district(val).render_border: 
-		if district_manager: 
+		if district_manager and is_district(val):
 			var district = district_manager.get_district(val)
 			if district and district.render_border: 
 				col = Color("a34a4d")
@@ -247,13 +245,12 @@ func add_river(_id_grid: Array, start: Vector2i, end: Vector2i) -> Array:
 		# TODO: Fix this
 		if _id_grid[offset_pos.x][offset_pos.y] == 0:
 			pass
-			print("flood fill")
 			flood_fill_solve_group(_id_grid, offset_pos, 1, 0)
 
 		for j in range(4):
 			for k in range(4):
 				if not bounds_check(offset_pos + Vector2i(j-2, k-2), Vector2i(len(_id_grid), len(_id_grid[0]))): continue
-				_id_grid[offset_pos.x + j - 2][offset_pos.y + k - 2] = MIN_UNIQUE_ID
+				_id_grid[offset_pos.x + j - 2][offset_pos.y + k - 2] = Enums.Cell.WATER
 
 	MIN_UNIQUE_ID += 1
 	return _id_grid

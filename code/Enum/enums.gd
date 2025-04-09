@@ -1,6 +1,8 @@
 class_name Enums
 
 enum Cell {
+    WATER = -6,
+
     DISTRICT_WALL = -4,
     CITY_WALL = -3,
     DISTRICT_CENTER = -2,
@@ -8,7 +10,6 @@ enum Cell {
     VOID_SPACE_0 = 0,
     VOID_SPACE_1 = 1,
     OUTSIDE_SPACE = 2, 
-    WATER = 3,
 }
 
 #TODO: IDEALLY CAN WRITE OUT WATER BEING A DISTRICT ID

@@ -29,7 +29,6 @@ func _ready():
 	]
 	#Vector2(0.0, 1.0)
 	await a_star(start.position, end.position, Vector2(0.0, 1.0), [], nodes, squareSize)
-	print("done")
 
 func a_star(start : Vector2, end : Vector2, direction : Vector2, path : Array, nodes : Array, squareSize : float, tol : float = 10.0): 
 	if start.distance_to(end) < tol: return path
@@ -50,7 +49,6 @@ func a_star(start : Vector2, end : Vector2, direction : Vector2, path : Array, n
 			#var new_dir = direction.rotated(min_rot)
 			#var vec_to_end = end - new_pos
 			#var angle_to_ideal = acos(new_dir.dot(vec_to_end) / (new_dir.length() * vec_to_end.length()))
-			#print(angle_to_ideal)
 			var remaining_distance = pow(pow(float(new_pos[0]) - float(end[0]), 2.0) + pow(float(new_pos[1]) - float(end[1]), 2.0), 0.5)
 			var distance_travelled = pow(pow(float(new_pos[0]) - float(pos[0]), 2.0) + pow(float(new_pos[1]) - float(pos[1]), 2.0), 0.5)
 			

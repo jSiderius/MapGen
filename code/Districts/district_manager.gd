@@ -4,12 +4,12 @@ class_name DistrictManager
 
 var district : Resource = preload("res://code/Districts/district.gd")
 var districts_dict : Dictionary = {}
-var last_observed_id_grid = []
+var last_observed_id_grid : Array
 var size_location_data_recorded = false
 var center_district_id : int = 0
 
 func _init(id_grid : Array, data_flags : DistrictDataFlagStruct):
-	
+
 	update_district_data(id_grid, data_flags)
 
 	# for row in id_grid: for id in row: 
@@ -30,7 +30,6 @@ func update_district_data(id_grid : Array, data_flags : DistrictDataFlagStruct) 
 
 		Return: void
 	'''
-
 	if last_observed_id_grid == id_grid: return
 
 	# TODO: Appropriately handle initializing vs reseting
@@ -38,16 +37,12 @@ func update_district_data(id_grid : Array, data_flags : DistrictDataFlagStruct) 
 
 	if data_flags.update_size_location_data:
 		update_or_init_size_location_data(id_grid)
-		print("1")
 	if data_flags.update_percentage_data: 
 		update_or_init_percentage_data(id_grid)
-		print("2")
 	if data_flags.update_centrality_data: 
 		update_or_init_centrality_data(id_grid)
-		print("3")
 	if data_flags.update_bounding_data: 
 		update_or_init_bounding_data(id_grid)
-		print("4")
 		
 	last_observed_id_grid = id_grid
 
@@ -161,8 +156,8 @@ func get_keys_sorted_by_attribute(attribute : String, ascending : bool) -> Array
 	var districts_arr : Array = _sort_by_attribute(districts_dict.values(), attribute, ascending)
 	var keys_arr : Array = []
 
-	for district in districts_arr: 
-		keys_arr.append(district.id)
+	for distr in districts_arr:
+		keys_arr.append(distr.id)
 	
 	return keys_arr
 
@@ -182,9 +177,11 @@ func get_num_districts() -> int:
 func get_district(key : int) -> District:
 	''' Returns a district from 'districts_dict' if it exists '''
 
-	if key not in districts_dict: 
-		print_debug("Non-existent district requested from district manager")
+	if key not in districts_dict:
+		# print_debug("Non-existent district (" + str(key) + ") requested from district manager")
+		# push_error("Non-existent district requested from district manager")
 		return null
+
 	return districts_dict[key]
 
 func get_district_attribute(key : int, attribute : String): 
@@ -192,10 +189,12 @@ func get_district_attribute(key : int, attribute : String):
 
 	if key not in districts_dict: 
 		print_debug("Attribute requested from non-existent district in district manager")
+		push_error("Attribute requested from non-existent district in district manager")
 		return null
 		
 	if attribute not in districts_dict[key]:
 		print_debug("Non-existent attribute requested from district in district manager")
+		push_error("Non-existent attribute requested from district in district manager")
 		return null
 
 	return districts_dict[key][attribute]
