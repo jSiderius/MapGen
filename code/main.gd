@@ -48,7 +48,6 @@ func _ready() -> void:
 
 	id_grid = cellular_automata_trials(id_grid, [3])
 	if debug: await redraw_and_pause(3, 1.0)
-	# return
 
 	# TODO: Document grid layout (in class maybe)
 	var river_start : Vector2i = random_edge_position(len(id_grid), len(id_grid[0]))
@@ -85,35 +84,32 @@ func _ready() -> void:
 	# Expand groups into null space (1)
 	id_grid = expand_id_grid(id_grid, [Enums.Cell.OUTSIDE_SPACE, Enums.Cell.MAJOR_ROAD, Enums.Cell.WATER], [Enums.Cell.WATER])
 	if debug: await redraw_and_pause(6, 0.1)
-	return 
 
 	# Create a voronoi cell map, and clear cells from id_grid that correspond to voronoi edge cells, creating a city outline
 	var voronoi_id_array : Array = generate_id_array_with_voronoi_cells(width, height, 100)
 	var edge_cell_ids : Array = find_unique_edge_cell_ids(voronoi_id_array) 
 	voronoi_id_array = overwrite_cells_by_id(voronoi_id_array, edge_cell_ids, Enums.Cell.OUTSIDE_SPACE)
-	id_grid = copy_designated_ids(voronoi_id_array, id_grid, [Enums.Cell.OUTSIDE_SPACE], [Enums.Cell.WATER])
-	id_grid = overwrite_cells_by_id(id_grid, [Enums.Cell.CITY_WALL], -5) # TODO: -5 ???
+	id_grid = copy_designated_ids(voronoi_id_array, id_grid, [Enums.Cell.OUTSIDE_SPACE], [Enums.Cell.WATER, Enums.Cell.MAJOR_ROAD])
 	if debug: await redraw_and_pause(2, 0.1)
-	
+
 	district_manager.update_district_data(id_grid, district_flag_struct)
 
 	# Ensure there are no inside districts (common bug) TODO: Could assess the cause but this is fine too
-	id_grid = flood_fill_elim_inside_terrain(id_grid)
-	if debug: await redraw_and_pause(7, 0.1)
+	# id_grid = flood_fill_elim_inside_terrain(id_grid) TODO: Assess, not coming up right now
+	# if debug: await redraw_and_pause(7, 0.1)
+	# return
 
 	# Increase the array resolution and add a new (thinner) border
 	var multiplier : float = 1.5
 	id_grid = increase_array_resolution(id_grid, multiplier)
 	square_size = square_size / float(multiplier)
-	add_city_border(id_grid, Enums.Cell.DISTRICT_WALL)
+	# add_city_border(id_grid, Enums.Cell.DISTRICT_WALL)
 
 	if debug: await redraw_and_pause(8, 0.1)
 
 	district_manager.update_district_data(id_grid, district_flag_struct)
-	var district_centers : Array[Vector2i] = district_manager.get_district_centers()
-	
-	# roads = add_roads(id_grid, district_centers, true)
 	if debug: await redraw_and_pause(10)
+
 	# return
 
 	id_grid = increase_array_resolution(id_grid, 2.0)
@@ -161,7 +157,7 @@ func draw_from_id_grid() -> void:
 		Enums.Cell.DISTRICT_WALL : Color.BLACK, # District walls 
 		Enums.Cell.CITY_WALL : Color.BLACK, # City walls
 		Enums.Cell.DISTRICT_CENTER : Color.BLUE, #District Center
-		Enums.Cell.MAJOR_ROAD : Color8(139,69,19), # Major roads
+		Enums.Cell.MAJOR_ROAD : Color.YELLOW, # Major roads
 		Enums.Cell.VOID_SPACE_0 : Color.WHITE, # Void space from noise, becomes obsolete
 		Enums.Cell.VOID_SPACE_1 : Color.BLACK, # Void space from noise, becomes district and city walls 
 		Enums.Cell.OUTSIDE_SPACE : Color.GREEN, # Outside space 
@@ -174,14 +170,14 @@ func draw_from_id_grid() -> void:
 		var val : int = id_grid[x][y]
 
 		# Get the color and position of the node
-		var col = colors_dict[val] if val in colors_dict else get_random_color(id_grid[x][y], Vector3(1.0, -1.0, 0.0))
+		# var col = colors_dict[val] if val in colors_dict else get_random_color(id_grid[x][y], Vector3(1.0, -1.0, 0.0))
+		var col = colors_dict[val] if val in colors_dict else get_random_color(id_grid[x][y], Vector3(-1.0, -1.0, -1.0))
 		var rect : Rect2 = Rect2(Vector2(x*square_size,y*square_size), Vector2(square_size, square_size))
 
 		if district_manager and is_district(val):
 			var district = district_manager.get_district(val)
 			if district and district.render_border: 
 				col = Color("a34a4d")
-
 
 		# Draw the rect
 		draw_rect(rect, col)
@@ -215,12 +211,12 @@ func add_center_line(_id_grid : Array) -> Array:
 	var offset : int = 0
 	for i in range(len(_id_grid[0])): 
 		if randf() < 0.1: offset += (randi() % 2)
-		_id_grid[floor(len(_id_grid) / 2.0) + offset][i] = 2
+		_id_grid[floor(len(_id_grid) / 2.0) + offset][i] = Enums.Cell.MAJOR_ROAD
 		
 	offset = 0
 	for i in range(len(_id_grid)):
 		if randf() < 0.1: offset += (randi() % 2)
-		_id_grid[i][floor(len(_id_grid[0]) / 2.0) + offset] = 2
+		_id_grid[i][floor(len(_id_grid[0]) / 2.0) + offset] = Enums.Cell.MAJOR_ROAD
 		
 	return _id_grid
 

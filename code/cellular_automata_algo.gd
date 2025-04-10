@@ -122,12 +122,9 @@ func expand_id_grid_instance(id_grid : Array, pos : Vector2i, active_expansion_c
 	var cell_id : int = id_grid[pos.x][pos.y]
 
 	
-	if cell_id == Enums.Cell.WATER: print("Before")
-
 	# Ensure the cell is a group node
 	if not (is_district(cell_id) or cell_id in expanding_ids): return
-	
-	if cell_id == Enums.Cell.WATER: print("Through")
+
 	# Determine if any neighbors are valid for expansion
 	for n in four_neighbors: 
 		var n_pos : Vector2i = pos + n
