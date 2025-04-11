@@ -10,7 +10,7 @@ var graph_loader : Resource = preload("res://code/Graph/graph.gd")
 var subGraph : Graph 
 var randWeights : Array[Array] = []
 
-func _init(e : Array[Edge], v : Array[Vector2i]) -> void: 
+func _init(e : Array[Edge] = [], v : Array[Vector2i] = []) -> void: 
 	edges = e
 	vertices = v
 
@@ -297,7 +297,8 @@ func a_star(id_grid : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i
 	
 	# TODO: Verify the best system for random weighting
 	if randWeights == []: 
-		init_rand_weights(id_grid)
+		init_rand_weights(id_grid, 5.0)
+
 	
 	# Initialize data structures
 	var prev : Dictionary = {} # Dict for the previous node a node comes from
@@ -354,17 +355,17 @@ func a_star(id_grid : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i
 
 	return _path
 
-func init_rand_weights(id_grid : Array):
+func init_rand_weights(id_grid : Array, max_weight : float = 3.0):
 	# Initialize random weighing for each node for more natural appearance 
-	for x in range(len(id_grid)): 
+	for x in range(len(id_grid)):
 		randWeights.append([])
 		for y in range(len(id_grid[x])):
 
 			# Random weighting 
-			randWeights[x].append(randf_range(0, 3))
+			randWeights[x].append(randf_range(0, max_weight))
 
 			# Large weighting for city border 
-			if id_grid[x][y] == Enums.Cell.DISTRICT_WALL: 
+			if id_grid[x][y] == Enums.Cell.DISTRICT_WALL or id_grid[x][y] == Enums.Cell.WATER: 
 				randWeights[x][y] += 10000
 
 func positions_to_roads(id_grid : Array, route : Array[Vector2i]) -> Array: 

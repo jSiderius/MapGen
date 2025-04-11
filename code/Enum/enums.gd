@@ -12,4 +12,17 @@ enum Cell {
     OUTSIDE_SPACE = 2, 
 }
 
+enum Border {
+    NORTH = 0,
+    SOUTH = 1, 
+    EAST = 2, 
+    WEST = 3,
+}
+
+enum GridInitType {
+    EMPTY = 0,
+    RANDOM = 1,
+    VORONOI = 2,
+}
+
 #TODO: IDEALLY CAN WRITE OUT WATER BEING A DISTRICT ID

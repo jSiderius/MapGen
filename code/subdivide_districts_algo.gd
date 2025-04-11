@@ -23,22 +23,6 @@ func get_array_between(v1: Vector2, v2: Vector2, id_grid: Array) -> Array:
 			result[x-start.x].append(id_grid[x][y])
 
 	return result
-	
-func increase_array_resolution(id_grid : Array, multiplier : float = 2): 
-	'''	Increases the resolution of 'id_grid' by a factor of 'multiplier' '''
-	# TODO: Assess, Verify, Document
-
-	var id_grid_new : Array = []
-
-	# Iterate multiplier * the size of the current grid
-	for i in range(floor(multiplier * len(id_grid))):
-		id_grid_new.append([])
-		for j in range(floor(multiplier * len(id_grid[0]))): 
-			# Add the interpolated value to the new grid
-			id_grid_new[i].append(id_grid[floor(i / float(multiplier))][floor(j / float(multiplier))])
-	
-	# return the grid
-	return id_grid_new
 
 # TODO: Probably depreciated in District
 # TODO: Assess, Verify, Document

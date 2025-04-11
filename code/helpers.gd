@@ -96,10 +96,10 @@ func redraw_and_pause(alg : int, stall : float = 1.0, screenshot = true) -> void
 
 func _sort_by_attribute(array : Array, attribute : String, ascending : bool) -> Array:
 	''' Sort a passed array by a passed attribute in ascending or descending order '''
-	''' TODO: Validate that the array is of objects, the attribute is valid, ... ''' 
 
 	if array.size() > 0 and attribute not in array[0]:
-		push_warning("Array items are not dictionaries or objects with accessible attributes.")
+		print_debug("Array items are not dictionaries or objects with accessible attributes.")
+		push_error("Array items are not dictionaries or objects with accessible attributes.")
 
 	array.sort_custom(func(a, b): return (a[attribute] < b[attribute]) if ascending else (a[attribute] > b[attribute]))
 	return array
@@ -141,23 +141,59 @@ func select_random_items(arr: Array, count: int) -> Array:
 	# Take the first_screenshot `count` items
 	return temp_arr.slice(0, count)
 
-func random_edge_position(width: int, height: int) -> Vector2i:
+func random_edge_position(width: int, height: int, sides : Array[int] = [Enums.Border.NORTH, Enums.Border.SOUTH, Enums.Border.EAST, Enums.Border.WEST]) -> Vector2i:
 	''' Gives a random position on the edge of the grid '''
-	''' TODO: Small chance to not reach the edge, I don't think the bug is in this function '''
+	''' TODO: Small chance for river to not reach the edge, I don't think the bug is in this function '''
+	''' TODO: Verify values in sides '''
 
-	var side := randi() % 4  # 0 = top, 1 = bottom, 2 = left, 3 = right
+	# var side := randi() % 4  # 0 = top, 1 = bottom, 2 = left, 3 = right
+	var side : int = sides[randi() % len(sides)]
 	
 	match side:
-		0:  # top
+		Enums.Border.NORTH:
 			return Vector2i(randi() % width, 0)
-		1:  # bottom
+		Enums.Border.SOUTH:
 			return Vector2i(randi() % width, height - 1)
-		2:  # left
+		Enums.Border.WEST:
 			return Vector2i(0, randi() % height)
-		3:  # right
+		Enums.Border.EAST:
 			return Vector2i(width - 1, randi() % height)
 	
-	return Vector2i(0, 0) # Unreachable (for compiler)
+	return Vector2i(0, 0) # Shouldn't be reached
 
-func is_district(id : int): 
+func is_district(id : int) -> bool: 
+	''' Returns a boolean representing if an ID constitutes a district ID '''
+	
 	return id > 2
+
+func get_position_id_by_voronoi_cell_locations(cells : Array[Vector2i], pos : Vector2i, p : float=1) -> int: 
+	'''
+		Purpose:
+			Determine the closest of an array of positions (representing Voronoi cells) to a single passed position 
+
+		Args:
+			cells: 
+				An array of vectors representing voronoi cell locations
+			pos: 
+				A single position vector, for which we want to determine the nearest position in 'cells'
+			p: 
+				The root for the distance functions. p=1 -> manhattan distance, p=2 -> euclidean distance, ... 
+				
+		Returns: 
+			int: The index of the nearest vector to 'pos' in 'cells' 
+	'''
+	
+	var min_index : int = 0
+	var min_distance : float = 1000000.0
+	for i in range(len(cells)):
+
+		# Calculate the distance from 'pos' to the ith cell
+		var distance : float = pow( pow(abs(pos.x - cells[i].x), p) + pow(abs(pos.y - cells[i].y), p), 1.0/p)
+		if distance > min_distance: continue
+		
+		# Update the ith cell as the new minimum cell if it's distance is less than all previous cells
+		min_index = i 
+		min_distance = distance
+	
+	return min_index
+	

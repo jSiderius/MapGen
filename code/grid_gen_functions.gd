@@ -25,3 +25,6 @@ func generate_empty_id_array(width : int, height : int) -> Array:
 		for y in range(height): 
 			newIdArray[x].append(Enums.Cell.VOID_SPACE_0)
 	return newIdArray
+
+func _draw():
+	pass
