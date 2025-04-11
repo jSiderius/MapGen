@@ -30,13 +30,13 @@ func bounds_check(pos : Vector2i, boundary : Vector2i):
 
 	return pos.x >=0 and pos.x < boundary.x and pos.y >= 0 and pos.y < boundary.y
 
-func find_width_and_height(screen_size : Vector2, square_size : float) -> Vector2: 
+func find_width_and_height(screen_size : Vector2, square_size : float) -> Vector2i: 
 	''' Takes the screen size and square size and determines the integer size of the screen in terms of squares '''
 
 	var width : int =  ceil(screen_size.x / square_size)
 	var height : int = ceil(screen_size.y / square_size)
 
-	return Vector2(width, height)
+	return Vector2i(width, height)
 
 func update_screen_size(width : int, height : int, square_size : float) -> Vector2: 
 	''' Takes the current screensize and the square size and updates the size of the screen to land exactly on a square, returns the resulting size '''

@@ -24,11 +24,31 @@ var colors_dict : Dictionary = {
 }
 
 func _init(_width : int, _height : int, _square_size : int, init_type : int = Enums.GridInitType.RANDOM, arguments : Dictionary = {}) -> void:
-	print("init")
+	'''
+		Purpose: 
+			Initialize the class
+		
+		Arguments: 
+			_width:
+				Width of the grid
+			_height: 
+				Height of the grid
+			_square_size: 
+				Size of each square for rendering
+			init_type: 
+				Flag indicating how the grid should be initialized
+			arguments: 
+				Dictionary to pass arguments onto grid initialization functions as needed
+			
+		Return: void
+	'''
+
+	# Initialize variables
 	width = _width
 	height = _height
 	square_size = _square_size
 
+	# Initialize the grid according to the flag
 	if init_type == Enums.GridInitType.RANDOM: 
 		init_random()
 	elif init_type == Enums.GridInitType.EMPTY: 
@@ -41,7 +61,8 @@ func _init(_width : int, _height : int, _square_size : int, init_type : int = En
 		push_error("Invalid grid initialization type")
 
 func init_random():
-	''' Generates a 2D grid with dimensions 'width'x'height', each value is randomly assigned to be 0 or 1 '''
+	''' Generates a 2D grid with dimensions 'width'x'height', each value is randomly assigned to be VOID_SPACE_O (0) or VOID_SPACE_1 (1) '''
+
 	id_grid = []
 	for y in height:
 		id_grid.append([])
@@ -50,6 +71,8 @@ func init_random():
 			pass
 	
 func init_empty():
+	''' Generates a 2D grid with dimensions 'width'x'height', each value is assigned to be VOID_SPACE_O (0) '''
+
 	id_grid = []
 	for y in height:
 		id_grid.append([])
@@ -61,19 +84,16 @@ func init_voronoi(arguments : Dictionary) -> void:
 		Purpose: 
 			Generate an ID grid where each ID is set to the value of the nearest randomly generated voronoi point
 
-		Args: 
-			width: 
-				Width of the new ID grid
-			height: 
-				Height of the new ID grid
+		Args (contained in 'arguments' dict):
 			num_cells: 
 				Number of randomly generated voronoi cells
-			min_dist_from_edge_percent: 
+			min_dist:
 				The minimum distance a voroni cells can be from any edge as a percentage of the size of the grid
 
-		Returns:
-			Array: The generated array 
+		Returns: void
 	'''
+
+	# Get the arguments from 'arguments'
 	var num_cells : int = arguments["num_cells"] if "num_cells" in arguments else 100
 	var min_dist_from_edge_percent : float = arguments["min_dist"] if "min_dist" in arguments else 0.05
 
@@ -94,14 +114,22 @@ func init_voronoi(arguments : Dictionary) -> void:
 		set_id(y, x, get_position_id_by_voronoi_cell_locations(cells, Vector2i(y, x)) + 1)
 
 func init_district_manager():
+	''' Initialize the district manager to track information about the districts '''
+
 	district_flag_struct = district_flag_struct_loader.new(true)
 	district_manager = district_manager_loader.new(id_grid, district_flag_struct)
 
-func update_district_manager(): 
+func update_district_manager(flags : DistrictDataFlagStruct = null):
+	''' Update the district manager with the currently set flags or new ones ''' 
+
+	# Update the flags if necessary
+	if flags != null: district_flag_struct = flags
+
+	# Update the manager
 	district_manager.update_district_data(id_grid, district_flag_struct)
 
-# Draws to screen based on the values in id_grid
 func _draw() -> void:
+	''' Draws to screen based on the values class data ''' 
 
 	for y in range(height): for x in range(width):
 		
@@ -146,17 +174,24 @@ func _draw() -> void:
 		draw_rect(rect, Color.YELLOW)
 
 func index(y : int, x : int):
+	''' get an id from the grid by a y, x index '''
 	return id_grid[y][x]
 
 func index_vec(vec : Vector2i):
-	''' NOTE: Vector should already be formatted in [y][x] '''
+	''' get an id from the grid by a y, x vector
+		NOTE: Vector should already be formatted in [y][x] '''
 
 	return id_grid[vec.x][vec.y]
 
 func set_id(y : int, x : int, val : int) -> void:
+	''' set an id from the grid by a y, x index '''
+
 	id_grid[y][x] = val
 
 func set_id_vec(vec : Vector2i, val : int) -> void: 
+	''' get an id from the grid by a y, x vector
+		NOTE: Vector should already be formatted in [y][x] '''
+
 	id_grid[vec.x][vec.y] = val
 
 func cellular_automata_trials(trial_threshold_values : Array[int], avoidance_ids : Array[int] = [Enums.Cell.WATER]) -> void:
@@ -165,13 +200,12 @@ func cellular_automata_trials(trial_threshold_values : Array[int], avoidance_ids
 			Run multiple trials of the cellular automata algorithm on a 2D grid
 
 		Arguments: 
-			id_grid:
-				The 2D grid
 			trial_threshold_values: 
 				An ordered array of the threshold value used for trial of the algorithm, the length of this array replaces the need for a num_trials arg
+			avoidance_ids: 
+				ID's which should be directly avoided by cell clumps
 
-		Return: 
-			Array: 'id_grid' manipulated according to the function
+		Return: void
 	'''
 
 	for threshold in trial_threshold_values:
@@ -181,16 +215,14 @@ func cellular_automata(threshold : int, avoidance_ids : Array[int] = []) -> void
 	'''
 		Purpose: 
 			Follows the cellular automata algorithm to update the values in id_grid based on the number of neighbors a cell has w.r.t. the threshold
-			Exclusively considers 1 & 0 values, any other value is untouched and not considered a neighbor 
 
 		Arguments: 
-			id_grid: 
-				The 2D grid to conduct the algorithm on
 			threshold: 
 				The threshod number of 1 neighbors such that if a cell has more, it becomes a 1, and if it has less it becomes a 0
+			avoidance_ids: 
+				ID's which should be directly avoided by cell clumps
 
-		Return: 
-			Array: A new 2D grid resulting from the algorithm being run on 'id_grid'
+		Return: void
 	'''
 
 	var new_grid : Array[Array] = []
@@ -231,22 +263,44 @@ func cellular_automata(threshold : int, avoidance_ids : Array[int] = []) -> void
 	
 	id_grid = new_grid
 	
-func add_river(start: Vector2i, end: Vector2i) -> void:
-	print("river")
+func add_river(start: Vector2i, end: Vector2i, offset_probability : float) -> void:
+	'''
+		Purpose: 
+			Adds a river to the grid
+		
+		Arguments: 
+			start: the starting point of the river 
+			end: the ending point of the river, this point may not be literally reached due to offsets
+		
+		Return: void
+	'''
+	# Validate arguments
+	if offset_probability > 1.0: offset_probability = 1.0
+	if offset_probability < 0.0: offset_probability = 0.0
+	if not bounds_check(start, Vector2i(height, width)) or not bounds_check(end, Vector2i(height, width)):
+		print_debug("Start (" + str(start) + ") or end (" + str(end) + ") of river out of boundary (" + str(Vector2i(height, width)) +")")
+		push_warning("Start (" + str(start) + ") or end (" + str(end) + ") of river out of boundary (" + str(Vector2i(height, width)) +")")
+	
+	# Determine the number of steps and initialize variables
 	var diff = end - start
 	var steps = int(max(abs(diff.x), abs(diff.y)))
-	
 	var offset = 0
 	
+	# Iterate the steps
 	for i in range(steps + 1):
+
+		# Interpolate the position in the grid at the current step
 		var t = float(i) / float(steps)
 		var x = int(round(lerp(start.x, end.x, t)))
 		var y = int(round(lerp(start.y, end.y, t)))
 		
-		if randf() < 0.8:
+		# 
+		if randf() < offset_probability:
+			# TODO: add offset magnitude
 			offset += (randi() % 3) - 1  # -1, 0, or +1
 		var offset_pos : Vector2i = Vector2i(y, x + offset)
 		
+		# Bounds check the offset position
 		if not bounds_check(offset_pos, Vector2i(height, width)): continue
 		
 		# TODO: Fix this if necessary
@@ -254,11 +308,12 @@ func add_river(start: Vector2i, end: Vector2i) -> void:
 			pass
 			# flood_fill_solve_group(_id_grid, offset_pos, 1, 0)
 
+		# Set the selected values to WATER
 		for j in range(4):
 			for k in range(4):
+				# TODO: Argument for size of the cube
 				if not bounds_check(offset_pos + Vector2i(j-2, k-2), Vector2i(height, width)): continue
 				set_id_vec(Vector2i(j-2, k-2) + offset_pos, Enums.Cell.WATER)
-				# _id_grid[offset_pos.x + j - 2][offset_pos.y + k - 2] = Enums.Cell.WATER
 
 	MIN_UNIQUE_ID += 1
 
@@ -268,14 +323,11 @@ func flood_fill(target_id : int = Enums.Cell.VOID_SPACE_0) -> void:
 			Uses the flood fill algorithm to identify differentiated regions of cells with a designated ID, and sets new ID's which are unique by region
 
 		Arguments: 
-			id_grid: 
-				The 2D grid for the algorithms
 			target_id: 
 				The ID for which the algorithm will find spatially seperated regions
 				Could easily be replaced by an array of ID's if this functionality becomes necessary
 
-		Return: 
-			'id_grid' manipulated by the function
+		Return: void
 	'''
 	
 	# Iterate the grid
@@ -297,8 +349,6 @@ func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : in
 			Solves a single group of connected cells within the larger 'flood_fill' algorithm
 
 		Arguments: 
-			id_grid: 
-				The 2D grid to perform the algorithm on
 			initial_pos: 
 				The starting point of the algorithm
 			new_id: 
@@ -306,8 +356,7 @@ func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : in
 			target_id: 
 				The ID that cells must have to be added to the group 
 
-		Return: 
-			Array: 'id_grid' manipulated by the function
+		Return: void
 	'''
 
 	# Initialize an array to track squares that are in the group but whose neighbors have not yet been checked
@@ -372,19 +421,16 @@ func parse_smallest_districts(num_districts : int = 15, new_cell_id : int = Enum
 	for key in groups_to_parse: 
 		district_manager.erase_district(key)
 
-func expand_id_grid(autonomous_ids : Array[int] = [], expanding_ids : Array[int] = []) -> Array: 
+func expand_id_grid(autonomous_ids : Array[int] = [], expanding_ids : Array[int] = []) -> void: 
 	'''
 		Purpose: 
 			Expand the district cells into the void space surrounding it
 
 		Arguments: 
-			id_grid: 
-				The 2D grid that the function modifies
 			autonomous_ids: 
 				A list of ID's which cannot be expanded TO in the algorithm (district ID's (>3) are autonomous by default)
 
-		Return: 
-			Array: 'id_grid' manipulated by the algorithm
+		Return: void
 		
 		Notes
 			- Could add other expansion parameters such as min/max size and block/encourage expansion accordingly
@@ -399,15 +445,20 @@ func expand_id_grid(autonomous_ids : Array[int] = [], expanding_ids : Array[int]
 		var pos : Vector2i = active_expansion_cells.pop_front()
 		expand_id_grid_instance(pos, active_expansion_cells, autonomous_ids, expanding_ids)
 	
-	return id_grid
-
 func expand_id_grid_instance(pos : Vector2i, active_expansion_cells : Array, autonomous_ids : Array[int] = [], expanding_ids = []) -> void: 
 	'''
 		Purpose: 
 			Given a position in the grid, determine if the cell can validly expand to any of its neighbors, and do so
 		
 		Arguments: 
-			id_grid: the ID grid
+			pos:
+				the position of the cell trying to expand
+			active_expansion_cells:
+				a stack of cells that are currently being active for expanding (if a cell is expanded to it is added)
+			autonomous_ids:
+				an array of ID's that cannot be expanded to
+			expanding_ids: 
+				an array of ID's which are allowed to expand (district ID's expand by default)
 
 		Return: void
 	'''
@@ -450,13 +501,10 @@ func copy_designated_ids(from_grid : Grid, ids_to_copy : Array, autonomous_ids :
 		Args: 
 			from_grid: 
 				The array to be copied from
-			to_grid:
-				The array to copy to
 			ids_to_copy: 
 				The array of ID's which should be copied (ID's not in set will be retain their value in 'to_grid')
 
-		Returns:
-			Array: 'to_grid' manipulated according to the function 
+		Returns: void
 	'''
 
 	# Exit the function if the arrays have different shapes
@@ -478,8 +526,7 @@ func find_unique_edge_cell_ids() -> Array:
 		Purpose: 
 			Determine the set of all IDs in the grid which border the edge
 		
-		Args: 
-			id_grid: The grid to determine the output set from 
+		Args: none
 
 		Returns: 
 			Array: Set of all IDs in 'id_grid' which border the edge
@@ -497,21 +544,18 @@ func find_unique_edge_cell_ids() -> Array:
 	
 	return edge_cell_ids
 
-func overwrite_cells_by_id(ids_to_overwrite : Array, new_cell_id : int = Enums.Cell.VOID_SPACE_0) -> Array: 
+func overwrite_cells_by_id(ids_to_overwrite : Array, new_cell_id : int = Enums.Cell.VOID_SPACE_0) -> void: 
 	'''
 		Purpose: 
 			Overwrites all cells in a 2D grid which are designated to be overwritten with a passed value
 
 		Args: 
-			id_grid: 
-				The 2D grid
 			id_to_overwrite: 
 				The ids in 'id_grid' which will be set to the new override value
 			new_cell_id: 
 				The new override value
 
-		Returns:
-			Array: 'id_grid' manipulated according to the function
+		Returns: void
 	'''
 
 	# Iterate all cells in the 2d array
@@ -521,25 +565,34 @@ func overwrite_cells_by_id(ids_to_overwrite : Array, new_cell_id : int = Enums.C
 		if index(y, x) in ids_to_overwrite: 
 			set_id(y, x, new_cell_id)
 			
-	return id_grid
+func increase_array_resolution(multiplier : float = 2) -> void:
+	'''	
+		Purpose:
+			Increases the resolution of 'id_grid' by a factor of 'multiplier' 
 
-func increase_array_resolution(multiplier : float = 2): 
-	'''	Increases the resolution of 'id_grid' by a factor of 'multiplier' '''
-	# TODO: Assess, Verify, Document
+		Arguments:
+			multiplier: the resolution multiplier
 
+		Return: void		
+	'''
+
+
+	# Setup the new grid
 	var id_grid_new : Array[Array] = []
 
+	# Adjust class variables
 	height = floor(multiplier * height)
 	width = floor(multiplier * width) 
 	square_size = square_size / multiplier
 
-	# Iterate multiplier * the size of the current grid
+	# Iterate the size of the new grid
 	for y in range(height):
 		id_grid_new.append([])
 		for x in range(width):
 			# Add the interpolated value to the new grid
 			id_grid_new[y].append(index(floor(float(y) / multiplier), floor(float(x) / multiplier)))
 
+	# Update the grid and district manager
 	id_grid = id_grid_new	
 	update_district_manager()
 
@@ -558,13 +611,10 @@ func validate_city_border(border_value : int = Enums.Cell.CITY_WALL) -> void:
 			NOTE: Could be extended to district borders using null space arguments and small changes in logic
 			
 		Arguments: 
-			id_grid: 
-				2D grid for the algoritm
 			border_value: 
 				The ID value of border cells
 		
-		Return: 
-			Array: 'id_grid' manipulated by the algorithm
+		Return: void
 	'''
 
 	# Iterate the grid
@@ -597,13 +647,10 @@ func add_rough_city_border(border_value : int = Enums.Cell.CITY_WALL) -> void:
 			NOTE: This is a rough border because it can create small interior lumps of border, these can be eliminated with the 'validate_city_border' function
 
 		Arguments: 
-			id_grid: 
-				The 2D grid to perform the algorithm on
 			border_value: 
 				The new ID for the border cells
 		
-		Return: 
-			Array: 'id_grid' manupulated by the algorithm
+		Return: void
 	'''
 
 	# Iterate the grid
@@ -621,8 +668,19 @@ func add_rough_city_border(border_value : int = Enums.Cell.CITY_WALL) -> void:
 				set_id(y, x, border_value)
 				break
 
-func toggle_border_rendering(render : bool, n_largest : int = -1):
+func toggle_border_rendering(render : bool, n_largest : int = -1) -> void:
+	'''
+		Purpose: 
+			Toggle the 'render_border' fields of the 'n_largest' districts so that the borders will be drawn to screen
+		
+		Arguments: 
+			render: 
+				Bool for if rendering should be toggled on or off
+			n_largest: 
+				The number of districts that should be toggled
 
+		Return: void
+	'''
 
 	# Select districts sorted by size (gives the ability to render the n largest if wanted)
 	var sorted_keys : Array = district_manager.get_keys_sorted_by_attribute("size_", false)
@@ -634,3 +692,18 @@ func toggle_border_rendering(render : bool, n_largest : int = -1):
 		var district : District = district_manager.get_district(sorted_keys[i])
 		if sorted_keys[i] == Enums.Cell.WATER: continue
 		district.render_border = render
+
+func draw_bounding_box(col : Color, ss : float, line_width : float, tl : Vector2i, br : Vector2i) -> void: 
+	# Convert the points to top-left and bottom-right for consistent rectangle rendering
+	var top_left = Vector2(ss * min(tl.x, br.x), ss * min(tl.y, br.y))
+	var bottom_right = Vector2(ss * (max(tl.x, br.x) + 1), ss * (max(tl.y, br.y) + 1))
+	
+	# Define the corners
+	var top_right = Vector2(bottom_right.x, top_left.y)
+	var bottom_left = Vector2(top_left.x, bottom_right.y)
+
+	# Draw the four sides of the rectangle with the specified line width
+	draw_line(top_left, top_right, col, line_width)  # Top side
+	draw_line(top_right, bottom_right, col, line_width)  # Right side
+	draw_line(bottom_right, bottom_left, col, line_width)  # Bottom side
+	draw_line(bottom_left, top_left, col, line_width)  # Left side
