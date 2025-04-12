@@ -218,8 +218,9 @@ func add_edge_set_to_grid(id_grid : Array, edge_set : Array[Edge]) -> Array:
 	'''
 
 	for edge in edge_set: 
-		var route : Array[Vector2i] = a_star(id_grid, edge.first, edge.second)
-		id_grid = positions_to_roads(id_grid, route)
+		# var route : Array[Vector2i] = a_star(id_grid, edge.first, edge.second)
+		# id_grid = positions_to_roads(id_grid, route)
+		pass
 	
 	return id_grid
 
@@ -278,7 +279,7 @@ func is_sparse() -> bool:
 
 # 	return outgoing
 
-func a_star(id_grid : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i]: 
+func a_star(id_grid : Grid, start : Vector2i, end : Vector2i) -> Array[Vector2i]: 
 	'''
 		Purpose:
 			Use the A* Algorithm to determine the path between 2 points in an ID grid
@@ -296,7 +297,7 @@ func a_star(id_grid : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i
 	'''
 	
 	# TODO: Verify the best system for random weighting
-	if randWeights == []: 
+	if randWeights == []:
 		init_rand_weights(id_grid, 5.0)
 
 	
@@ -310,7 +311,7 @@ func a_star(id_grid : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i
 	prev[start] = null 
 	dist[start] = 0
 
-	# Iterate while we have not found the end (TODO: error handling for the pq.is_empty case)
+	# Iterate while we have not found the end
 	while not pq.is_empty() and end not in prev:
 		
 		# Get the min node
@@ -323,7 +324,8 @@ func a_star(id_grid : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i
 			n = n + curr
 
 			# Bounds check the neighbor position
-			if not bounds_check(n, Vector2i(len(id_grid), len(id_grid[0]))): continue
+			# if not bounds_check(n, Vector2i(len(id_grid), len(id_grid[0]))): continue
+			if not bounds_check(n, Vector2i(id_grid.height, id_grid.width)): continue
 
 			# Check if the neighbor is the goal and handle accordingly
 			if n == end:
@@ -332,7 +334,7 @@ func a_star(id_grid : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i
 				break
 
 			# Calculate the heuristic cost of the neighbor (see https://brilliant.org/wiki/a-star-search/)
-			var g_n : float = 1 + randWeights[n.x][n.y]
+			var g_n : float = 1 + randWeights[n[0]][n[1]]
 			var h_n = abs(n.x - end.x) + abs(n.y - end.y) 
 			var f_n = g_n + h_n
 
@@ -340,12 +342,15 @@ func a_star(id_grid : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i
 			if n in dist and dist[n] <= dist[curr]+g_n: continue  
 
 			# Track the neighbor in the data structures
-			pq.insert_or_reduce(n, f_n)
-			prev[n] = curr 
+			pq.insert_or_update(n, f_n)
+			prev[n] = curr
 			dist[n] = dist[curr] + g_n
 
 	var _path : Array[Vector2i] = []
-	if end not in prev: return _path
+	if end not in prev: 
+		print_debug("A* was unable to find the end vector")
+		push_error("A* was unable to find th end vector")
+		return _path
 
 	# Reconstruct the path from the 'prev' dictionary
 	var reconstruct : Vector2i = prev[end]
@@ -355,18 +360,31 @@ func a_star(id_grid : Array, start : Vector2i, end : Vector2i) -> Array[Vector2i
 
 	return _path
 
-func init_rand_weights(id_grid : Array, max_weight : float = 3.0):
+var alternate_weightings : Dictionary = {
+	Enums.Cell.DISTRICT_WALL : 100, 
+	Enums.Cell.OUTSIDE_SPACE : 20,
+	Enums.Cell.WATER : 10,
+
+}
+
+# TODO: Could actually initialize rand_weights as its own grid object (?)
+func init_rand_weights(id_grid : Grid, max_weight : float = 3.0):
+	
 	# Initialize random weighing for each node for more natural appearance 
-	for x in range(len(id_grid)):
+	for y in range(id_grid.height):
 		randWeights.append([])
-		for y in range(len(id_grid[x])):
-
+		for x in range(id_grid.width): 
 			# Random weighting 
-			randWeights[x].append(randf_range(0, max_weight))
+			randWeights[y].append(randf_range(0, max_weight))
 
+			if id_grid.index(y, x) in alternate_weightings: 
+				randWeights[y][x] = alternate_weightings[id_grid.index(y, x)]
+			
 			# Large weighting for city border 
-			if id_grid[x][y] == Enums.Cell.DISTRICT_WALL or id_grid[x][y] == Enums.Cell.WATER: 
-				randWeights[x][y] += 10000
+			# if id_grid[x][y] == Enums.Cell.DISTRICT_WALL or id_grid[x][y] == Enums.Cell.WATER: 
+				# randWeights[x][y] += 10000
+
+			
 
 func positions_to_roads(id_grid : Array, route : Array[Vector2i]) -> Array: 
 	for node in route: 

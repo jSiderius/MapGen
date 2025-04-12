@@ -7,13 +7,14 @@ var height : int
 var square_size : float
 var id_grid : Array[Array]
 
-var river_start : Vector2i 
-var river_end : Vector2i
+var visual_debug_cells : Array[Vector2i] = []
 
 var district_flag_struct_loader : Resource = preload("res://code/Districts/district_data_flags_struct.gd")
 var district_flag_struct : DistrictDataFlagStruct
 var district_manager_loader : Resource = preload("res://code/Districts/district_manager.gd")
 var district_manager : DistrictManager
+var graph_loader : Resource = preload("res://code/Graph/graph.gd")
+var graph : Graph
 
 var colors_dict : Dictionary = {
 		Enums.Cell.DISTRICT_WALL : Color.BLACK, # District walls 
@@ -142,6 +143,12 @@ func update_district_manager(flags : DistrictDataFlagStruct = null) -> void:
 	# Update the manager
 	district_manager.update_district_data(id_grid, district_flag_struct)
 
+func init_empty_graph(): 
+	graph = graph_loader.new()
+
+func update_graph():
+	pass
+
 func _draw() -> void:
 	''' Draws to screen based on the values class data ''' 
 
@@ -187,14 +194,11 @@ func _draw() -> void:
 		# Draw the rect
 		draw_rect(rect, Color.YELLOW)
 	
-	if river_start and river_end: 
-		var rect : Rect2 = Rect2(Vector2(river_start.x*square_size, river_start.y*square_size), Vector2(square_size * 3.0, square_size * 3.0))
-		draw_rect(rect, Color.PINK)
-		rect = Rect2(Vector2(river_end.x*square_size, river_end.y*square_size), Vector2(square_size * 3.0, square_size * 3.0))
-		draw_rect(rect, Color.PINK)
-
-
-
+	for pos in visual_debug_cells:
+		# TODO: x, y right?
+		var rect : Rect2 = Rect2(Vector2(pos.x*square_size, pos.y*square_size), Vector2(square_size, square_size))
+		draw_rect(rect, Color.RED)
+		print(pos)
 
 func index(y : int, x : int):
 	''' get an id from the grid by a y, x index '''
@@ -216,6 +220,20 @@ func set_id_vec(vec : Vector2i, val : int) -> void:
 		NOTE: Vector should already be formatted in [y][x] '''
 
 	id_grid[vec.x][vec.y] = val
+
+func clear_grid(immune_ids : Array[int] = [], override_value : int = Enums.Cell.VOID_SPACE_0) -> void:
+	''' Clears any value in the grid not in 'immune_ids' and sets them to 'override_value' '''
+
+	for y in range(height): for x in range(width):
+		if index(y, x) not in immune_ids:
+			set_id(y, x, override_value)
+
+func clear_grid_to_noise(immune_ids : Array[int] = [], noise_values : Array[int] = [Enums.Cell.VOID_SPACE_0, Enums.Cell.VOID_SPACE_1]) -> void:
+	''' Clears any value in the grid not in 'immune_ids' and sets them randomly to values in 'noise_values' '''
+	
+	for y in range(height): for x in range(width):
+		if index(y, x) not in immune_ids:
+			set_id(y, x, noise_values[randi() % len(noise_values)])
 
 func cellular_automata_trials(trial_threshold_values : Array[int], avoidance_ids : Array[int] = [Enums.Cell.WATER]) -> void:
 	'''
@@ -303,9 +321,6 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 
 	print(start, " ", end, " ", Vector2i(height, width))
 	
-	river_start = start
-	river_end = end
-
 	# Validate arguments
 	if offset_probability > 1.0: offset_probability = 1.0
 	if offset_probability < 0.0: offset_probability = 0.0
@@ -352,6 +367,27 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 				set_id_vec(pos, Enums.Cell.WATER)
 
 	MIN_UNIQUE_ID += 1
+
+# TODO: Consolidate with Graph
+func add_major_roads():
+	init_empty_graph()
+
+	var road_start : Vector2i = random_edge_position(height, width, Vector2i(-1, -1), [Enums.Border.EAST])
+	var road_end : Vector2i = random_edge_position(height, width, Vector2(-1, -1), [Enums.Border.WEST])
+	visual_debug_cells.append(road_start)
+	visual_debug_cells.append(road_end)
+	
+	print("road start ", road_start)
+	print("road end ", road_end)
+	print("boundary ", Vector2i(height, width))
+
+	var _path = graph.a_star(self, road_start, road_end)
+	print(_path)
+
+	for pos in _path: 
+		set_id_vec(pos, Enums.Cell.MAJOR_ROAD)
+	# 	id_grid[pos.x][pos.y] = Enums.Cell.MAJOR_ROAD
+	print("Exit function")
 
 func flood_fill(target_id : int = Enums.Cell.VOID_SPACE_0) -> void: 
 	'''
@@ -675,7 +711,7 @@ func validate_city_border(border_value : int = Enums.Cell.CITY_WALL) -> void:
 		if not is_border: set_id(y, x, -1001)
 			
 	# Expand the grid to overwrite arbitrary values
-	expand_id_grid([Enums.Cell.OUTSIDE_SPACE, border_value, Enums.Cell.WATER])
+	expand_id_grid([Enums.Cell.OUTSIDE_SPACE, border_value, Enums.Cell.WATER, Enums.Cell.MAJOR_ROAD])
 
 func add_rough_city_border(border_value : int = Enums.Cell.CITY_WALL) -> void:
 	'''

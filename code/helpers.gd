@@ -142,7 +142,7 @@ func select_random_items(arr: Array, count: int) -> Array:
 	return temp_arr.slice(0, count)
 
 # TODO: Make it about quarters, dont be in the same quarter
-func random_edge_position(width: int, height: int,  avoidance_vector : Vector2i = Vector2i(-1, -1), sides : Array[int] = [Enums.Border.NORTH, Enums.Border.SOUTH, Enums.Border.EAST, Enums.Border.WEST]) -> Vector2i:
+func random_edge_position(height: int, width: int,  avoidance_vector : Vector2i = Vector2i(-1, -1), sides : Array[int] = [Enums.Border.NORTH, Enums.Border.SOUTH, Enums.Border.EAST, Enums.Border.WEST]) -> Vector2i:
 	''' Gives a random position on the edge of the grid '''
 
 	var selected : Vector2i
@@ -163,10 +163,7 @@ func random_edge_position(width: int, height: int,  avoidance_vector : Vector2i 
 				selected = Vector2i(randi()%height, width - 1)
 		
 		if avoidance_vector == Vector2i(-1, -1) or trials > 100 or selected.distance_to(avoidance_vector) > min_distance:
-			print(avoidance_vector == Vector2i(-1, -1), " ", trials > 100, " ", selected.distance_to(avoidance_vector))
 			return selected
-		print("loop")
-		
 		
 	return Vector2i(0, 0) # Shouldn't be reached
 
