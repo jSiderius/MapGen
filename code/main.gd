@@ -54,23 +54,32 @@ func _ready() -> void:
 	id_grid.parse_smallest_districts(75)
 	if debug: await redraw_and_pause(7, 0.2)
 
-	# # Expand groups into null space (1)
+	# Expand groups into null space (1)
 	id_grid.expand_id_grid([Enums.Cell.OUTSIDE_SPACE, Enums.Cell.MAJOR_ROAD, Enums.Cell.WATER], [Enums.Cell.WATER])
 	if debug: await redraw_and_pause(8, 0.2)
 
-	id_grid.clear_grid_to_noise([Enums.Cell.WATER])
+	# Clear the grid with the exception of water
+	id_grid.clear_grid([Enums.Cell.WATER], Enums.Cell.VOID_SPACE_1)
 	if debug: await redraw_and_pause(9, 0.2)
 
-	# # Create a voronoi cell map, and clear cells from id_grid that correspond to voronoi edge cells, creating a city outline
+	# Create a voronoi cell map, and clear cells from id_grid that correspond to voronoi edge cells, creating a city outline
 	var voronoi_id_grid : Grid = grid_loader.new(id_grid.width, id_grid.height, square_size, Enums.GridInitType.VORONOI, {})
 	var edge_cell_ids = voronoi_id_grid.find_unique_edge_cell_ids()
 	voronoi_id_grid.overwrite_cells_by_id(edge_cell_ids, Enums.Cell.OUTSIDE_SPACE)
-
 	id_grid.copy_designated_ids(voronoi_id_grid, [Enums.Cell.OUTSIDE_SPACE], [Enums.Cell.WATER, Enums.Cell.MAJOR_ROAD])
 	if debug: await redraw_and_pause(10, 0.2)
 	
-	id_grid.add_major_roads()
+	# Eliminate groups of city space less than some threshold percentage of total city space
+	id_grid.flood_fill_elim_annexed_space(0.25, Enums.Cell.VOID_SPACE_1, Enums.Cell.OUTSIDE_SPACE)
 	if debug: await redraw_and_pause(11, 0.2)
+
+	# Reintigrate noise
+	id_grid.clear_grid_to_noise([Enums.Cell.WATER, Enums.Cell.OUTSIDE_SPACE], [Enums.Cell.VOID_SPACE_0, Enums.Cell.VOID_SPACE_1])
+	if debug: await redraw_and_pause(12, 0.2)
+
+	# Add roads
+	id_grid.add_major_roads()
+	if debug: await redraw_and_pause(13, 0.2)
 	return
 
 

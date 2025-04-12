@@ -317,9 +317,6 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 		Return: void
 	'''
 
-	print("River Start: ", start)
-	print("River End: ", end)
-	print("Boundaries: ", Vector2i(height, width))
 	visual_debug_cells.append(start)
 	visual_debug_cells.append(end)
 	
@@ -384,6 +381,57 @@ func add_major_roads():
 	for pos in _path: 
 		set_id_vec(pos, Enums.Cell.MAJOR_ROAD)
 
+func flood_fill_elim_annexed_space(threshold : float = 0.25, target_id : int = Enums.Cell.VOID_SPACE_1, new_id : int = Enums.Cell.OUTSIDE_SPACE) -> void:
+	'''
+		Purpose: 
+			Use the flood fill algorithm to determine the groups of some target ID and eleminate them if they do not exceed some threshold of total space
+
+		Arguments: 
+			threshold: 
+				The percentage of total space of an ID a group of that ID needs to contain to not be eliminated
+				Ranges between 0 and 1
+			target_id:
+				The ID that is being assessed by the algorithm
+			new_id: 
+				The ID that replaces target_id if deemed necessary 
+
+		Return: void
+	'''
+
+	# Validate values
+	if threshold > 1.0: threshold = 1.0
+	if threshold < 0.0: threshold = 0.0
+
+	# Initialize group tracking variables
+	var groups : Array[Array] = []
+	var group_sizes : Array[int] = []
+	var total_size : int = 0
+
+	# Iterate the grid
+	for y in range(height): for x in range(width):
+		
+		# Skip if the ID is not the designated ID
+		if not index(y, x) == target_id: continue
+
+		# Set up a new group getter array
+		groups.append([])
+
+		# Use the flood_fill_solve_group algorithm to get information about the group
+		var _size : int = flood_fill_solve_group(Vector2(y,x), Enums.Cell.VOID_SPACE_0, target_id, groups[len(groups) - 1])
+		group_sizes.append(_size)
+		total_size += _size
+	
+	# Iterate all groups 
+	for i in range(len(groups)):
+		
+		if group_sizes[i] > float(total_size) * threshold: continue
+
+		# Override the group to OUTSIDE_SPACE
+		for pos in groups[i]:
+			set_id_vec(pos, new_id)
+	
+
+
 func flood_fill(target_id : int = Enums.Cell.VOID_SPACE_0) -> void: 
 	'''
 		Purpose: 
@@ -409,7 +457,7 @@ func flood_fill(target_id : int = Enums.Cell.VOID_SPACE_0) -> void:
 		# Update MIN_UNIQUE_ID
 		MIN_UNIQUE_ID += 1
 
-func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : int = Enums.Cell.VOID_SPACE_0) -> int:
+func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : int = Enums.Cell.VOID_SPACE_0, group_cells : Array = []) -> int:
 	'''
 		Purpose: 
 			Set all cells with an ID of 'target_id' that are spatially connected to 'initial_pos' to 'new_id'
@@ -424,6 +472,7 @@ func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : in
 				The ID that cells must have to be added to the group 
 
 		Return: Number of cells in the new group 
+				group_cells: Getter arguments, all cells in the group
 	'''
 
 	# Track group size
@@ -432,6 +481,7 @@ func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : in
 	# Initialize an array to track squares that are in the group but whose neighbors have not yet been checked
 	var valid_positions : Array[Vector2i] = [] 
 	valid_positions.append(initial_pos)
+	group_cells.append(initial_pos)
 	
 	set_id_vec(initial_pos, new_id)
 	
@@ -451,6 +501,7 @@ func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : in
 
 			# Add the neighbor to the active array and set its value to 'new_id'
 			valid_positions.append(n_pos)
+			group_cells.append(n_pos)
 			set_id_vec(n_pos, new_id)
 			group_size += 1
 	
