@@ -195,10 +195,8 @@ func _draw() -> void:
 		draw_rect(rect, Color.YELLOW)
 	
 	for pos in visual_debug_cells:
-		# TODO: x, y right?
-		var rect : Rect2 = Rect2(Vector2(pos.x*square_size, pos.y*square_size), Vector2(square_size, square_size))
+		var rect : Rect2 = Rect2(Vector2(pos[1]*square_size, pos[0]*square_size), Vector2(square_size, square_size)) #Takes pos = (y,x) and coverts to godot's coords (x, y)
 		draw_rect(rect, Color.RED)
-		print(pos)
 
 func index(y : int, x : int):
 	''' get an id from the grid by a y, x index '''
@@ -319,7 +317,11 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 		Return: void
 	'''
 
-	print(start, " ", end, " ", Vector2i(height, width))
+	print("River Start: ", start)
+	print("River End: ", end)
+	print("Boundaries: ", Vector2i(height, width))
+	visual_debug_cells.append(start)
+	visual_debug_cells.append(end)
 	
 	# Validate arguments
 	if offset_probability > 1.0: offset_probability = 1.0
@@ -341,8 +343,8 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 
 		# Interpolate the position in the grid at the current step
 		var t = float(i) / float(steps)
-		var x = int(round(lerp(start.x, end.x, t)))
-		var y = int(round(lerp(start.y, end.y, t)))
+		var y = int(round(lerp(start[0], end[0], t)))
+		var x = int(round(lerp(start[1], end[1], t)))
 		
 		if randf() < offset_probability:
 			var offset_scalar = (randi() % (offset_magnitude * 2 + 1)) - offset_magnitude
@@ -374,20 +376,13 @@ func add_major_roads():
 
 	var road_start : Vector2i = random_edge_position(height, width, Vector2i(-1, -1), [Enums.Border.EAST])
 	var road_end : Vector2i = random_edge_position(height, width, Vector2(-1, -1), [Enums.Border.WEST])
-	visual_debug_cells.append(road_start)
-	visual_debug_cells.append(road_end)
+	# visual_debug_cells.append(road_start)
+	# visual_debug_cells.append(road_end)
 	
-	print("road start ", road_start)
-	print("road end ", road_end)
-	print("boundary ", Vector2i(height, width))
-
 	var _path = graph.a_star(self, road_start, road_end)
-	print(_path)
 
 	for pos in _path: 
 		set_id_vec(pos, Enums.Cell.MAJOR_ROAD)
-	# 	id_grid[pos.x][pos.y] = Enums.Cell.MAJOR_ROAD
-	print("Exit function")
 
 func flood_fill(target_id : int = Enums.Cell.VOID_SPACE_0) -> void: 
 	'''

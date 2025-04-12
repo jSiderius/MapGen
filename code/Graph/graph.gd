@@ -380,11 +380,6 @@ func init_rand_weights(id_grid : Grid, max_weight : float = 3.0):
 			if id_grid.index(y, x) in alternate_weightings: 
 				randWeights[y][x] = alternate_weightings[id_grid.index(y, x)]
 			
-			# Large weighting for city border 
-			# if id_grid[x][y] == Enums.Cell.DISTRICT_WALL or id_grid[x][y] == Enums.Cell.WATER: 
-				# randWeights[x][y] += 10000
-
-			
 
 func positions_to_roads(id_grid : Array, route : Array[Vector2i]) -> Array: 
 	for node in route: 
