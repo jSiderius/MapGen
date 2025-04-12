@@ -6,7 +6,6 @@ var points : Array
 var pivot_offset : Vector2
 var scene : PackedScene
 	
-#TODO Get scale from texture if necessary
 func _init(scene : PackedScene, points : Array, rotation : float, scale : float):
 	self.points = points 
 	self.rotation = rotation

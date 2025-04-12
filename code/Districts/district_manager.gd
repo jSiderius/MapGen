@@ -8,14 +8,10 @@ var last_observed_id_grid : Array
 var size_location_data_recorded = false
 var center_district_id : int = 0
 
+# TODO: Should this be updated to id_grid or okay as is? 
 func _init(id_grid : Array, data_flags : DistrictDataFlagStruct):
 
 	update_district_data(id_grid, data_flags)
-
-	# for row in id_grid: for id in row: 
-		# if id <= 2 or id in districts_dict: continue # ID's below 3 are non-district values
-
-		# districts_dict[id] = district.new(id)
 
 func update_district_data(id_grid : Array, data_flags : DistrictDataFlagStruct) -> void:
 	'''
@@ -145,7 +141,6 @@ func get_keys_sorted_by_attribute(attribute : String, ascending : bool) -> Array
 		Arguments: 
 			attribute: 
 				A string representing a class attribute of 'District' the array should be sorted by 
-				TODO: Ensure good values
 			ascending: 
 				Determines if the array is sorted in ascending or descending order
 

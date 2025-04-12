@@ -18,7 +18,7 @@ var four_neighbors : Array[Vector2i] = [
 var pqLoad : Resource = preload("res://code/priority_queue.gd")
 
 ''' The current minimum unique ID, stored globally to track ID's over the course of the program '''
-var MIN_UNIQUE_ID : int = 3 # TODO: RIVER FIX
+var MIN_UNIQUE_ID : int = 3
 
 func is_edge(pos : Vector2i, boundary : Vector2i) -> bool:
 	''' Takes a pos (x,y), and a boundary for the maximum of x and y and determines if (x,y) is on the edge of the grid '''
@@ -141,24 +141,31 @@ func select_random_items(arr: Array, count: int) -> Array:
 	# Take the first_screenshot `count` items
 	return temp_arr.slice(0, count)
 
-func random_edge_position(width: int, height: int, sides : Array[int] = [Enums.Border.NORTH, Enums.Border.SOUTH, Enums.Border.EAST, Enums.Border.WEST]) -> Vector2i:
+# TODO: Make it about quarters, dont be in the same quarter
+func random_edge_position(width: int, height: int,  avoidance_vector : Vector2i = Vector2i(-1, -1), sides : Array[int] = [Enums.Border.NORTH, Enums.Border.SOUTH, Enums.Border.EAST, Enums.Border.WEST]) -> Vector2i:
 	''' Gives a random position on the edge of the grid '''
-	''' TODO: Small chance for river to not reach the edge, I don't think the bug is in this function '''
-	''' TODO: Verify values in sides '''
 
-	# var side := randi() % 4  # 0 = top, 1 = bottom, 2 = left, 3 = right
-	var side : int = sides[randi() % len(sides)]
-	
-	match side:
-		Enums.Border.NORTH:
-			return Vector2i(randi() % width, 0)
-		Enums.Border.SOUTH:
-			return Vector2i(randi() % width, height - 1)
-		Enums.Border.WEST:
-			return Vector2i(0, randi() % height)
-		Enums.Border.EAST:
-			return Vector2i(width - 1, randi() % height)
-	
+	var selected : Vector2i
+	var trials : int = 0
+	var min_distance : float = max(width, height) * 0.5
+
+	while true: 
+		var side : int = sides[randi() % len(sides)]
+		
+		match side:
+			Enums.Border.NORTH:
+				selected = Vector2i(0, randi() % width)
+			Enums.Border.SOUTH:
+				selected = Vector2i(height - 1, randi() % width)
+			Enums.Border.WEST:
+				selected = Vector2i(randi() % height, 0)
+			Enums.Border.EAST:
+				selected = Vector2i(randi()%height, width - 1)
+		
+		if avoidance_vector == Vector2i(-1, -1) or trials > 100 or selected.distance_to(avoidance_vector) > min_distance:
+			# print(avoidance_vector == Vector2i(-1, -1), " ", trials > 100, " ", selected.distance_to(avoidance_vector))
+			return selected
+		
 	return Vector2i(0, 0) # Shouldn't be reached
 
 func is_district(id : int) -> bool: 
@@ -197,3 +204,15 @@ func get_position_id_by_voronoi_cell_locations(cells : Array[Vector2i], pos : Ve
 	
 	return min_index
 	
+func get_all_edge_vectors(height : int, width : int) -> Array[Vector2i]: 
+	var edge_vectors : Array[Vector2i] = []
+
+	for i in range(width):
+		edge_vectors.append(Vector2i(0, i))
+		edge_vectors.append(Vector2i(height - 1, i))
+	
+	for i in range(height): 
+		edge_vectors.append(Vector2i(i, 0))
+		edge_vectors.append(Vector2i(i, width - 1))
+	
+	return edge_vectors

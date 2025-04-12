@@ -9,6 +9,9 @@ extends "res://code/helpers.gd"
 var grid_loader : Resource = preload("res://code/Grid/grid.gd")
 var id_grid : Grid
 
+var river_start : Vector2i
+var river_end : Vector2i
+
 func _ready() -> void:
 
 	# Seed randomness
@@ -32,25 +35,23 @@ func _ready() -> void:
 	id_grid.cellular_automata_trials([3])
 	if debug: await redraw_and_pause(2, 0.2)
 
-	# # TODO: Document grid layout (in class maybe)
-	var river_start : Vector2i = random_edge_position(id_grid.height, id_grid.width)
-	var river_end : Vector2i = random_edge_position(id_grid.height, id_grid.width)
-	id_grid.add_river(river_start, river_end, 0.8)
+	river_start = random_edge_position(id_grid.height, id_grid.width)
+	river_end = random_edge_position(id_grid.height, id_grid.width)
+	id_grid.add_river(river_start, river_end, 0.8, 2)
 	if debug: await redraw_and_pause(3, 0.2)
 
 	id_grid.cellular_automata_trials([6])
 	if debug: await redraw_and_pause(4, 0.2)
 
 	# TODO: Working into grid and keep doing A*
-	var road_start : Vector2i = random_edge_position(id_grid.height, id_grid.width, [Enums.Border.EAST])
-	var road_end : Vector2i = random_edge_position(id_grid.height, id_grid.width, [Enums.Border.WEST])
+	# var road_start : Vector2i = random_edge_position(id_grid.height, id_grid.width, Vector2i(-1, -1), [Enums.Border.EAST])
+	# var road_end : Vector2i = random_edge_position(id_grid.height, id_grid.width, road_start, [Enums.Border.WEST])
 	# var path = empty_graph.a_star(id_grid road_start, road_end)
 	# for pos in path: 
 	# 	id_grid[pos.x][pos.y] = Enums.Cell.MAJOR_ROAD
 
 	if debug: await redraw_and_pause(5, 0.2)
 
-	# TODO: Districts of size 1 ?
 	# Run flood fill to differentiate groups
 	id_grid.flood_fill()
 	if debug: await redraw_and_pause(6, 0.2)
@@ -74,7 +75,7 @@ func _ready() -> void:
 
 	# # Increase the array resolution and add a new (thinner) border
 	id_grid.increase_array_resolution(1.5)
-	# id_grid.add_city_border(Enums.Cell.DISTRICT_WALL) 
+	id_grid.add_city_border(Enums.Cell.DISTRICT_WALL) 
 	if debug: await redraw_and_pause(10, 0.2)
 
 

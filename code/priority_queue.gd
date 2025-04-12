@@ -2,7 +2,6 @@ extends Node
 
 class_name  PriorityQueue
 
-''' TODO: Assess of 'Array[Array]' is best, maybe Array[PQItem] which is a simple struct '''
 var heap : Array = []
 
 func insert(item : Variant, priority : float) -> void: 

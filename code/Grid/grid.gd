@@ -7,6 +7,9 @@ var height : int
 var square_size : float
 var id_grid : Array[Array]
 
+var river_start : Vector2i 
+var river_end : Vector2i
+
 var district_flag_struct_loader : Resource = preload("res://code/Districts/district_data_flags_struct.gd")
 var district_flag_struct : DistrictDataFlagStruct
 var district_manager_loader : Resource = preload("res://code/Districts/district_manager.gd")
@@ -113,18 +116,29 @@ func init_voronoi(arguments : Dictionary) -> void:
 	for y in range(height): for x in range(width): 
 		set_id(y, x, get_position_id_by_voronoi_cell_locations(cells, Vector2i(y, x)) + 1)
 
-func init_district_manager():
+func init_district_manager(flags : DistrictDataFlagStruct = null) -> void:
 	''' Initialize the district manager to track information about the districts '''
-
-	district_flag_struct = district_flag_struct_loader.new(true)
+	
+	# Initialize the flags
+	if flags:
+		district_flag_struct = flags
+	else: 
+		district_flag_struct = district_flag_struct_loader.new(true)
+		
+	# Initialize the manager
 	district_manager = district_manager_loader.new(id_grid, district_flag_struct)
 
-func update_district_manager(flags : DistrictDataFlagStruct = null):
+func update_district_manager(flags : DistrictDataFlagStruct = null) -> void:
 	''' Update the district manager with the currently set flags or new ones ''' 
-
+	
 	# Update the flags if necessary
-	if flags != null: district_flag_struct = flags
-
+	if flags: district_flag_struct = flags
+	
+	# Init the district manager if necessary
+	if not district_manager: 
+		init_district_manager(flags)
+		return
+		
 	# Update the manager
 	district_manager.update_district_data(id_grid, district_flag_struct)
 
@@ -172,6 +186,15 @@ func _draw() -> void:
 
 		# Draw the rect
 		draw_rect(rect, Color.YELLOW)
+	
+	if river_start and river_end: 
+		var rect : Rect2 = Rect2(Vector2(river_start.x*square_size, river_start.y*square_size), Vector2(square_size * 3.0, square_size * 3.0))
+		draw_rect(rect, Color.PINK)
+		rect = Rect2(Vector2(river_end.x*square_size, river_end.y*square_size), Vector2(square_size * 3.0, square_size * 3.0))
+		draw_rect(rect, Color.PINK)
+
+
+
 
 func index(y : int, x : int):
 	''' get an id from the grid by a y, x index '''
@@ -263,7 +286,7 @@ func cellular_automata(threshold : int, avoidance_ids : Array[int] = []) -> void
 	
 	id_grid = new_grid
 	
-func add_river(start: Vector2i, end: Vector2i, offset_probability : float) -> void:
+func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8, offset_magnitude : int = 1, cube_size : int = 4) -> void:
 	'''
 		Purpose: 
 			Adds a river to the grid
@@ -271,9 +294,18 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float) -> vo
 		Arguments: 
 			start: the starting point of the river 
 			end: the ending point of the river, this point may not be literally reached due to offsets
+			offset_probability: the likelyhood that the river will wander at each step
+			offset_magnitude: the size of the offset if the river chooses to wander
+			cube_size: the width of the river
 		
 		Return: void
 	'''
+
+	print(start, " ", end, " ", Vector2i(height, width))
+	
+	river_start = start
+	river_end = end
+
 	# Validate arguments
 	if offset_probability > 1.0: offset_probability = 1.0
 	if offset_probability < 0.0: offset_probability = 0.0
@@ -294,26 +326,24 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float) -> vo
 		var x = int(round(lerp(start.x, end.x, t)))
 		var y = int(round(lerp(start.y, end.y, t)))
 		
-		# 
 		if randf() < offset_probability:
-			# TODO: add offset magnitude
-			offset += (randi() % 3) - 1  # -1, 0, or +1
+			offset += (randi() % (offset_magnitude * 2 + 1)) - offset_magnitude
 		var offset_pos : Vector2i = Vector2i(y, x + offset)
 		
 		# Bounds check the offset position
 		if not bounds_check(offset_pos, Vector2i(height, width)): continue
-		
-		# TODO: Fix this if necessary
-		if index_vec(offset_pos) == 0: 
-			pass
-			# flood_fill_solve_group(_id_grid, offset_pos, 1, 0)
 
+		cube_size = 2 * floor(float(cube_size) / 2.0)
 		# Set the selected values to WATER
-		for j in range(4):
-			for k in range(4):
-				# TODO: Argument for size of the cube
-				if not bounds_check(offset_pos + Vector2i(j-2, k-2), Vector2i(height, width)): continue
-				set_id_vec(Vector2i(j-2, k-2) + offset_pos, Enums.Cell.WATER)
+		for j in range(cube_size):
+			for k in range(cube_size):
+				var pos : Vector2i = offset_pos + Vector2i(round(j - cube_size / 2.0), round(k - cube_size / 2.0))
+				
+				if not bounds_check(pos, Vector2i(height, width)): continue
+				if index_vec(pos) == Enums.Cell.VOID_SPACE_0:
+					flood_fill_solve_group(pos, Enums.Cell.VOID_SPACE_1, Enums.Cell.VOID_SPACE_0)
+
+				set_id_vec(pos, Enums.Cell.WATER)
 
 	MIN_UNIQUE_ID += 1
 
@@ -342,7 +372,7 @@ func flood_fill(target_id : int = Enums.Cell.VOID_SPACE_0) -> void:
 		# Update MIN_UNIQUE_ID
 		MIN_UNIQUE_ID += 1
 
-func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : int = Enums.Cell.VOID_SPACE_0) -> void:
+func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : int = Enums.Cell.VOID_SPACE_0) -> int:
 	'''
 		Purpose: 
 			Set all cells with an ID of 'target_id' that are spatially connected to 'initial_pos' to 'new_id'
@@ -356,12 +386,17 @@ func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : in
 			target_id: 
 				The ID that cells must have to be added to the group 
 
-		Return: void
+		Return: Number of cells in the new group 
 	'''
+
+	# Track group size
+	var group_size : int = 1
 
 	# Initialize an array to track squares that are in the group but whose neighbors have not yet been checked
 	var valid_positions : Array[Vector2i] = [] 
 	valid_positions.append(initial_pos)
+	
+	set_id_vec(initial_pos, new_id)
 	
 	# Iterate while the array is not empty, the alternate to this is recursion but Godot struggles with recursion
 	while len(valid_positions) > 0: 
@@ -380,6 +415,9 @@ func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : in
 			# Add the neighbor to the active array and set its value to 'new_id'
 			valid_positions.append(n_pos)
 			set_id_vec(n_pos, new_id)
+			group_size += 1
+	
+	return group_size
 
 func parse_smallest_districts(num_districts : int = 15, new_cell_id : int = Enums.Cell.VOID_SPACE_1) -> void: 
 	'''
@@ -532,17 +570,13 @@ func find_unique_edge_cell_ids() -> Array:
 			Array: Set of all IDs in 'id_grid' which border the edge
 	'''
 
-	var edge_cell_ids : Array = []
+	var edge_cell_ids : Dictionary = {}
 
 	# Check every value in the 2D array
-	for y in range(height): for x in range(width): #TODO: iterate only edge cells, put this in a function maybe
-		var cell_id : int = index(y, x)
-
-		# Check if the cell is an edge cell and the cell's ID is not already in the set 
-		if is_edge(Vector2i(y, x), Vector2i(height, width)) and not cell_id in edge_cell_ids: #TODO: probably some more intuitvie way to clear this as a set like a dict
-			edge_cell_ids.append(cell_id)
+	for pos in get_all_edge_vectors(height, width):
+		edge_cell_ids[index_vec(pos)] = true
 	
-	return edge_cell_ids
+	return edge_cell_ids.keys()
 
 func overwrite_cells_by_id(ids_to_overwrite : Array, new_cell_id : int = Enums.Cell.VOID_SPACE_0) -> void: 
 	'''
@@ -596,7 +630,6 @@ func increase_array_resolution(multiplier : float = 2) -> void:
 	id_grid = id_grid_new	
 	update_district_manager()
 
-''' TODO: Fix river issues with city border algorithm '''
 func add_city_border(border_value : int = Enums.Cell.DISTRICT_WALL) -> void:
 	''' Adds a border of cells with value 'border_value' between null space (2) and district space (>2) '''
 
@@ -623,7 +656,6 @@ func validate_city_border(border_value : int = Enums.Cell.CITY_WALL) -> void:
 		# Only checking for cells with value 'border_value'
 		if index(y, x) != border_value: continue
 
-		
 		# Loop to ensure the cell neighbors OUTSIDE_SPACE
 		var is_border : bool = false
 		for n in neighbors:
@@ -634,11 +666,10 @@ func validate_city_border(border_value : int = Enums.Cell.CITY_WALL) -> void:
 				break
 		
 		# If the cell should not be a border set it to an arbitrary value that will be overwritten
-		if not is_border:
-			id_grid[x][y] = -1001
+		if not is_border: set_id(y, x, -1001)
 			
 	# Expand the grid to overwrite arbitrary values
-	expand_id_grid([Enums.Cell.OUTSIDE_SPACE, border_value])
+	expand_id_grid([Enums.Cell.OUTSIDE_SPACE, border_value, Enums.Cell.WATER])
 
 func add_rough_city_border(border_value : int = Enums.Cell.CITY_WALL) -> void:
 	'''
@@ -664,7 +695,7 @@ func add_rough_city_border(border_value : int = Enums.Cell.CITY_WALL) -> void:
 		for n in neighbors:	
 
 			# If the neighbor is a district, set the cell to a border ('border_value')
-			if index_vec(n + Vector2i(y, x)) > 2: 
+			if is_district(index_vec(n + Vector2i(y, x))): 
 				set_id(y, x, border_value)
 				break
 
