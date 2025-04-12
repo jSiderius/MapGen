@@ -36,8 +36,8 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(2, 0.2)
 
 	river_start = random_edge_position(id_grid.height, id_grid.width)
-	river_end = random_edge_position(id_grid.height, id_grid.width)
-	id_grid.add_river(river_start, river_end, 0.8, 2)
+	river_end = random_edge_position(id_grid.height, id_grid.width, river_start)
+	id_grid.add_river(river_start, river_end, 0.8, 2, 4)
 	if debug: await redraw_and_pause(3, 0.2)
 
 	id_grid.cellular_automata_trials([6])

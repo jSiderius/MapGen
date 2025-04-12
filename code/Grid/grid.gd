@@ -316,8 +316,11 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 	# Determine the number of steps and initialize variables
 	var diff = end - start
 	var steps = int(max(abs(diff.x), abs(diff.y)))
-	var offset = 0
 	
+	var offset : Vector2 = Vector2(0, 0)
+	var direction = Vector2(diff).normalized()
+	var orthogonal = Vector2(-direction[1], direction[0])
+
 	# Iterate the steps
 	for i in range(steps + 1):
 
@@ -327,19 +330,22 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 		var y = int(round(lerp(start.y, end.y, t)))
 		
 		if randf() < offset_probability:
-			offset += (randi() % (offset_magnitude * 2 + 1)) - offset_magnitude
-		var offset_pos : Vector2i = Vector2i(y, x + offset)
-		
-		# Bounds check the offset position
-		if not bounds_check(offset_pos, Vector2i(height, width)): continue
+			var offset_scalar = (randi() % (offset_magnitude * 2 + 1)) - offset_magnitude
+			offset += offset_scalar * orthogonal
 
+		var offset_pos : Vector2i = Vector2i(y, x) + Vector2i(offset)
+		
 		cube_size = 2 * floor(float(cube_size) / 2.0)
+
 		# Set the selected values to WATER
 		for j in range(cube_size):
 			for k in range(cube_size):
 				var pos : Vector2i = offset_pos + Vector2i(round(j - cube_size / 2.0), round(k - cube_size / 2.0))
 				
+				# Bounds check the offset position
 				if not bounds_check(pos, Vector2i(height, width)): continue
+				
+				# Remove any cell groups if they overlap the river
 				if index_vec(pos) == Enums.Cell.VOID_SPACE_0:
 					flood_fill_solve_group(pos, Enums.Cell.VOID_SPACE_1, Enums.Cell.VOID_SPACE_0)
 
