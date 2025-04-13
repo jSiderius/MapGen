@@ -37,7 +37,7 @@ func insert_or_update(item : Variant, newPriority : float) -> void:
     insert(item, newPriority)
 
 func insert_or_reduce(item : Variant, newPriority : float) -> void: 
-    ''' TODO: Review this one '''
+    ''' Insert a new item to the PQ according to it's priority, or reduce it's placement if it already exists and can be reduced '''
 
     for i in range(len(heap)): 
         if not heap[i][0] == item: continue

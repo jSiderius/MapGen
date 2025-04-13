@@ -127,7 +127,8 @@ func init_district_manager(flags : DistrictDataFlagStruct = null) -> void:
 		district_flag_struct = district_flag_struct_loader.new(true)
 		
 	# Initialize the manager
-	district_manager = district_manager_loader.new(id_grid, district_flag_struct)
+	district_manager = district_manager_loader.new(self, square_size, district_flag_struct)
+	add_child(district_manager)
 
 func update_district_manager(flags : DistrictDataFlagStruct = null) -> void:
 	''' Update the district manager with the currently set flags or new ones ''' 
@@ -141,62 +142,13 @@ func update_district_manager(flags : DistrictDataFlagStruct = null) -> void:
 		return
 		
 	# Update the manager
-	district_manager.update_district_data(id_grid, district_flag_struct)
+	district_manager.update_district_data(self, district_flag_struct)
 
 func init_empty_graph(): 
 	graph = graph_loader.new()
 
 func update_graph():
 	pass
-
-func _draw() -> void:
-	''' Draws to screen based on the values class data ''' 
-
-	for y in range(height): for x in range(width):
-		
-		# Get the value of the node 
-		var val : int = index(y, x)
-
-		# Get the color and position of the node
-		# var col = colors_dict[val] if val in colors_dict else get_random_color(id_grid[y][x], Vector3(1.0, -1.0, 0.0)) # RED-YELLOW SPECTRUM
-		var col = colors_dict[val] if val in colors_dict else get_random_color(id_grid[y][x], Vector3(-1.0, -1.0, -1.0))
-		var rect : Rect2 = Rect2(Vector2(x*square_size,y*square_size), Vector2(square_size, square_size))
-
-		if district_manager and is_district(val):
-			var district = district_manager.get_district(val)
-			if district and district.render_border: 
-				col = Color("a34a4d")
-
-		# Draw the rect
-		draw_rect(rect, col)
-	
-	# TODO: improve effeciency here
-	if not district_manager: return
-	var borders_to_render : Array[Vector2i] = district_manager.get_borders_to_render()
-	var rendered : Dictionary = {}
-	for pos in borders_to_render: 
-		
-		var skip_render : bool = false
-		for n in neighbors:
-			var n_pos : Vector2i = n + pos 
-			if not bounds_check(n_pos, Vector2i(height, width)): continue
-
-			if index_vec(n_pos) != index_vec(pos) and n_pos in rendered: 
-				skip_render = true
-				break
-
-		if skip_render: continue
-		rendered[pos] = true
-
-		# Get the color and position of the node 
-		var rect : Rect2 = Rect2(Vector2(pos.y*square_size,pos.x*square_size), Vector2(square_size, square_size))
-
-		# Draw the rect
-		draw_rect(rect, Color.YELLOW)
-	
-	for pos in visual_debug_cells:
-		var rect : Rect2 = Rect2(Vector2(pos[1]*square_size, pos[0]*square_size), Vector2(square_size, square_size)) #Takes pos = (y,x) and coverts to godot's coords (x, y)
-		draw_rect(rect, Color.RED)
 
 func index(y : int, x : int):
 	''' get an id from the grid by a y, x index '''
@@ -328,11 +280,12 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 		push_warning("Start (" + str(start) + ") or end (" + str(end) + ") of river out of boundary (" + str(Vector2i(height, width)) +")")
 	
 	# Determine the number of steps and initialize variables
-	var diff = end - start
+	print(end, " ", start, " ", end - start, " ", end + end - start)
+	var diff = end + end - start
 	var steps = int(max(abs(diff.x), abs(diff.y)))
 	
 	var offset : Vector2 = Vector2(0, 0)
-	var direction = Vector2(diff).normalized()
+	var direction = Vector2(end - start).normalized()
 	var orthogonal = Vector2(-direction[1], direction[0])
 
 	# Iterate the steps
@@ -380,6 +333,31 @@ func add_major_roads():
 
 	for pos in _path: 
 		set_id_vec(pos, Enums.Cell.MAJOR_ROAD)
+
+func flood_fill(target_id : int = Enums.Cell.VOID_SPACE_0) -> void: 
+	'''
+		Purpose: 
+			Uses the flood fill algorithm to identify differentiated regions of cells with a designated ID, and sets new ID's which are unique by region
+
+		Arguments: 
+			target_id: 
+				The ID for which the algorithm will find spatially seperated regions
+				Could easily be replaced by an array of ID's if this functionality becomes necessary
+
+		Return: void
+	'''
+	
+	# Iterate the grid
+	for y in range(height): for x in range(width):
+		
+		# Skip if the ID is not the designated ID
+		if not index(y, x) == target_id: continue
+
+		# Use the flood_fill_solve_group algorithm to set all cells connected to this one to MIN_UNIQUE_ID
+		flood_fill_solve_group(Vector2(y,x), MIN_UNIQUE_ID, target_id)
+
+		# Update MIN_UNIQUE_ID
+		MIN_UNIQUE_ID += 1
 
 func flood_fill_elim_annexed_space(threshold : float = 0.25, target_id : int = Enums.Cell.VOID_SPACE_1, new_id : int = Enums.Cell.OUTSIDE_SPACE) -> void:
 	'''
@@ -429,34 +407,39 @@ func flood_fill_elim_annexed_space(threshold : float = 0.25, target_id : int = E
 		# Override the group to OUTSIDE_SPACE
 		for pos in groups[i]:
 			set_id_vec(pos, new_id)
+
+# func flood_fill_elim_inside_terrain(id_grid : Array) -> Array: 
+# 	'''
+# 		Purpose: 
+# 			Gives a district ID to empty space (2) which is surrounded by district ID's (>2)
+# 			This addresses a bug where a single district is set as empty space (2)
+# 			NOTE: Should be reassessed in versions of the program that do not use empty space, the algorithm has some dependancies on this and the bug may not occur
+
+# 			TODO: 	Fix the bug before it happens instead of after
+# 					Only accounts for one new district (okay because only one has been observed)
+# 					Assess the algorithm and if it has a place in the program
+
+
+# 		Arguments: 
+# 			id_grid: The 2D grid to perform the algorithm on
+
+# 		Return: 
+# 			Array: 'id_grid manipulated by the algorithm'
+# 	'''
+
+# 	# Flood fill the edge group from (0,0) and replace values of OUTSIDE_SPACE with VOID_SPACE_0
+# 	flood_fill_solve_group(id_grid, Vector2(0,0), Enums.Cell.VOID_SPACE_0, Enums.Cell.OUTSIDE_SPACE)
+
+# 	# Replace any remaining values of OUTSIDE_SPACE with a new group
+# 	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
+# 		if id_grid[x][y] == 2: id_grid[x][y] = MIN_UNIQUE_ID
+# 	MIN_UNIQUE_ID += 1
 	
+# 	# Flood fill the edge group from VOID_SPACE_0 back to OUTSIDE_SPACE
+# 	flood_fill_solve_group(id_grid, Vector2(0,0), Enums.Cell.OUTSIDE_SPACE, Enums.Cell.VOID_SPACE_0)
+# 	return id_grid
 
-
-func flood_fill(target_id : int = Enums.Cell.VOID_SPACE_0) -> void: 
-	'''
-		Purpose: 
-			Uses the flood fill algorithm to identify differentiated regions of cells with a designated ID, and sets new ID's which are unique by region
-
-		Arguments: 
-			target_id: 
-				The ID for which the algorithm will find spatially seperated regions
-				Could easily be replaced by an array of ID's if this functionality becomes necessary
-
-		Return: void
-	'''
-	
-	# Iterate the grid
-	for y in range(height): for x in range(width):
-		
-		# Skip if the ID is not the designated ID
-		if not index(y, x) == target_id: continue
-
-		# Use the flood_fill_solve_group algorithm to set all cells connected to this one to MIN_UNIQUE_ID
-		flood_fill_solve_group(Vector2(y,x), MIN_UNIQUE_ID, target_id)
-
-		# Update MIN_UNIQUE_ID
-		MIN_UNIQUE_ID += 1
-
+# TODO: Neighbors typing enum
 func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : int = Enums.Cell.VOID_SPACE_0, group_cells : Array = []) -> int:
 	'''
 		Purpose: 
@@ -492,7 +475,7 @@ func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : in
 		var pos : Vector2i = valid_positions.pop_back()
 	
 		# Iterate all the positions neighbors
-		for n in four_neighbors:
+		for n in neighbors:
 			var n_pos : Vector2i = pos + n 
 			
 			# Ensure the neighbor is in bounds of the grid and it's value is 'target_id' otherwise continue
@@ -826,3 +809,32 @@ func draw_bounding_box(col : Color, ss : float, line_width : float, tl : Vector2
 	draw_line(top_right, bottom_right, col, line_width)  # Right side
 	draw_line(bottom_right, bottom_left, col, line_width)  # Bottom side
 	draw_line(bottom_left, top_left, col, line_width)  # Left side
+
+func _draw() -> void:
+	''' Draws to screen based on the values class data ''' 
+
+	for y in range(height): for x in range(width):
+		
+		# Get the value of the node 
+		var val : int = index(y, x)
+
+		# Get the color and position of the node
+		# var col = colors_dict[val] if val in colors_dict else get_random_color(id_grid[y][x], Vector3(1.0, -1.0, 0.0)) # RED-YELLOW SPECTRUM
+		var col = colors_dict[val] if val in colors_dict else get_random_color(id_grid[y][x], Vector3(-1.0, -1.0, -1.0))
+		var rect : Rect2 = Rect2(Vector2(x*square_size,y*square_size), Vector2(square_size, square_size))
+
+		if district_manager and is_district(val):
+			var district = district_manager.get_district(val)
+			if district and district.render_border: 
+				col = Color("a34a4d")
+
+		# Draw the rect
+		draw_rect(rect, col)
+	
+	if district_manager: 
+		print("manager")
+		district_manager.queue_redraw()
+	
+	for pos in visual_debug_cells:
+		var rect : Rect2 = Rect2(Vector2(pos[1]*square_size, pos[0]*square_size), Vector2(square_size, square_size)) #Takes pos = (y,x) and coverts to godot's coords (x, y)
+		draw_rect(rect, Color.RED)

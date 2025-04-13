@@ -141,7 +141,6 @@ func select_random_items(arr: Array, count: int) -> Array:
 	# Take the first_screenshot `count` items
 	return temp_arr.slice(0, count)
 
-# TODO: Make it about quarters, dont be in the same quarter
 func random_edge_position(height: int, width: int,  avoidance_vector : Vector2i = Vector2i(-1, -1), sides : Array[int] = [Enums.Border.NORTH, Enums.Border.SOUTH, Enums.Border.EAST, Enums.Border.WEST]) -> Vector2i:
 	''' Gives a random position on the edge of the grid '''
 

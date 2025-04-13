@@ -24,5 +24,3 @@ enum GridInitType {
     RANDOM = 1,
     VORONOI = 2,
 }
-
-#TODO: IDEALLY CAN WRITE OUT WATER BEING A DISTRICT ID
