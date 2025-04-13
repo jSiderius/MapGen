@@ -416,36 +416,42 @@ func flood_fill_elim_annexed_space(threshold : float = 0.25, target_id : int = E
 		for pos in groups[i]:
 			set_id_vec(pos, new_id)
 
-# func flood_fill_elim_inside_terrain(id_grid : Array) -> Array: 
-# 	'''
-# 		Purpose: 
-# 			Gives a district ID to empty space (2) which is surrounded by district ID's (>2)
-# 			This addresses a bug where a single district is set as empty space (2)
-# 			NOTE: Should be reassessed in versions of the program that do not use empty space, the algorithm has some dependancies on this and the bug may not occur
+func flood_fill_elim_inside_terrain(target_id : int = Enums.Cell.OUTSIDE_SPACE) -> void: 
+	'''
+		Purpose: 
+			Fill in 'target_id' cell groups which do not contain any edge cells, these are typically surrounded by districts or between districts and water
+			TODO: 	Small & Rare problem where a river completely surrounds outside space which then becomes a district
+					Accout for wanting to replace with a specific value and not districts if wanted
 
-# 			TODO: 	Fix the bug before it happens instead of after
-# 					Only accounts for one new district (okay because only one has been observed)
-# 					Assess the algorithm and if it has a place in the program
+		Arguments: 
+			target_id: The ID being replaced as necessary
 
+		Return: void
+	'''
 
-# 		Arguments: 
-# 			id_grid: The 2D grid to perform the algorithm on
+	#  Iterate the grid
+	for y in range(height): for x in range(width):
+		
+		# Skip if the ID is not the designated ID
+		if not index(y, x) == target_id: continue
 
-# 		Return: 
-# 			Array: 'id_grid manipulated by the algorithm'
-# 	'''
+		var groups_cells : Array[Vector2i] = []
 
-# 	# Flood fill the edge group from (0,0) and replace values of OUTSIDE_SPACE with VOID_SPACE_0
-# 	flood_fill_solve_group(id_grid, Vector2(0,0), Enums.Cell.VOID_SPACE_0, Enums.Cell.OUTSIDE_SPACE)
+		# Use the flood_fill_solve_group algorithm to set all cells connected to this one to MIN_UNIQUE_ID
+		flood_fill_solve_group(Vector2(y,x), Enums.Cell.HELPER, target_id, groups_cells)
 
-# 	# Replace any remaining values of OUTSIDE_SPACE with a new group
-# 	for x in range(len(id_grid)): for y in range(len(id_grid[x])): 
-# 		if id_grid[x][y] == 2: id_grid[x][y] = MIN_UNIQUE_ID
-# 	MIN_UNIQUE_ID += 1
-	
-# 	# Flood fill the edge group from VOID_SPACE_0 back to OUTSIDE_SPACE
-# 	flood_fill_solve_group(id_grid, Vector2(0,0), Enums.Cell.OUTSIDE_SPACE, Enums.Cell.VOID_SPACE_0)
-# 	return id_grid
+		var has_edge : bool = false
+		for cell in groups_cells:
+			if not is_edge(cell, Vector2i(height, width)): continue
+			has_edge = true
+			break
+		
+		if has_edge: continue
+
+		flood_fill_solve_group(Vector2i(y, x), MIN_UNIQUE_ID, Enums.Cell.HELPER)
+		MIN_UNIQUE_ID += 1
+
+	overwrite_cells_by_id([Enums.Cell.HELPER], Enums.Cell.OUTSIDE_SPACE)
 
 # TODO: Neighbors typing enum
 func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : int = Enums.Cell.VOID_SPACE_0, group_cells : Array = []) -> int:

@@ -98,16 +98,19 @@ func _ready() -> void:
 	# Expand groups into null space (1)
 	id_grid.expand_id_grid([Enums.Cell.OUTSIDE_SPACE, Enums.Cell.MAJOR_ROAD, Enums.Cell.WATER], [Enums.Cell.WATER])
 	if debug: await redraw_and_pause(17, 0.2)
+
+	id_grid.flood_fill_elim_inside_terrain()
+	if debug: await redraw_and_pause(18, 0.2)
 	
 	# # Increase the array resolution and add a new (thinner) border
 	# id_grid.increase_array_resolution(4.0) # TODO: Just draw the walls smaller
 	id_grid.add_city_border(Enums.Cell.DISTRICT_WALL) 
-	if debug: await redraw_and_pause(10, 0.2)
+	if debug: await redraw_and_pause(19, 0.2)
 
 	id_grid.update_district_manager()
 	id_grid.toggle_border_rendering(true)
 
-	if debug: await redraw_and_pause(11)
+	if debug: await redraw_and_pause(20, 0.2)
 
 func _draw() -> void: 
 	if secondary_grid_debug: 
