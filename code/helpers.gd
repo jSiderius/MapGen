@@ -166,6 +166,18 @@ func random_edge_position(height: int, width: int,  avoidance_vector : Vector2i 
 		
 	return Vector2i(0, 0) # Shouldn't be reached
 
+func nearest_edge_position(pos : Vector2i, boundary : Vector2i) -> Vector2i:
+	''' Gives the nearest edge position from a position'''
+
+	var possibilities : Array[Vector2i] = [Vector2i(pos[0], 0), Vector2i(pos[0], boundary[1]-1), Vector2i(0, pos[1]), Vector2i(boundary[0]-1, pos[1])]
+
+	var nearest : int = 0
+	for i in range(len(possibilities)):
+		if pos.distance_to(possibilities[i]) < pos.distance_to(possibilities[nearest]):
+			nearest = i
+	
+	return possibilities[nearest]
+
 func is_district(id : int) -> bool: 
 	''' Returns a boolean representing if an ID constitutes a district ID '''
 	

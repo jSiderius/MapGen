@@ -97,19 +97,19 @@ func init_voronoi(arguments : Dictionary) -> void:
 		Returns: void
 	'''
 
-	# Get the arguments from 'arguments'
+	# Get and validate the arguments from 'arguments'
 	var num_cells : int = arguments["num_cells"] if "num_cells" in arguments else 100
 	var min_dist_from_edge_percent : float = arguments["min_dist"] if "min_dist" in arguments else 0.05
+	if min_dist_from_edge_percent < 0.0: min_dist_from_edge_percent = 0.0
+	if min_dist_from_edge_percent > 0.45: min_dist_from_edge_percent = 0.45
 
 	init_empty()
 
 	# Create a vector representing the interger distance a voronoi cell should be from the edge
 	var buffer_zone : Vector2i = Vector2i(ceil(height * min_dist_from_edge_percent), ceil(width * min_dist_from_edge_percent))
 	
-	# TODO: Validate the buffer zone
-	var cells : Array[Vector2i] = []
-
 	# Randomly generate the cell locations
+	var cells : Array[Vector2i] = []
 	for i in range(num_cells): 
 		cells.append(Vector2i(buffer_zone.y + randi()%(height - 2 * buffer_zone.y), buffer_zone.x + randi()% (width - 2 * buffer_zone.x)))
 	
@@ -280,13 +280,15 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 		push_warning("Start (" + str(start) + ") or end (" + str(end) + ") of river out of boundary (" + str(Vector2i(height, width)) +")")
 	
 	# Determine the number of steps and initialize variables
-	print(end, " ", start, " ", end - start, " ", end + end - start)
 	var diff = end + end - start
 	var steps = int(max(abs(diff.x), abs(diff.y)))
 	
 	var offset : Vector2 = Vector2(0, 0)
 	var direction = Vector2(end - start).normalized()
 	var orthogonal = Vector2(-direction[1], direction[0])
+
+	var found_edge : bool = false
+	var last : Vector2i
 
 	# Iterate the steps
 	for i in range(steps + 1):
@@ -312,13 +314,19 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 				# Bounds check the offset position
 				if not bounds_check(pos, Vector2i(height, width)): continue
 				
+				if i > steps / 3.0 and is_edge(pos, Vector2i(height, width)): 
+					found_edge = true
+				last = pos
+				
 				# Remove any cell groups if they overlap the river
 				if index_vec(pos) == Enums.Cell.VOID_SPACE_0:
 					flood_fill_solve_group(pos, Enums.Cell.VOID_SPACE_1, Enums.Cell.VOID_SPACE_0)
 
 				set_id_vec(pos, Enums.Cell.WATER)
 
-	MIN_UNIQUE_ID += 1
+	if not found_edge:
+		# Recursively ensure the river reaches an edge
+		add_river(last, nearest_edge_position(last, Vector2i(height, width)), offset_probability, offset_magnitude, cube_size)
 
 # TODO: Consolidate with Graph
 func add_major_roads():
@@ -832,7 +840,6 @@ func _draw() -> void:
 		draw_rect(rect, col)
 	
 	if district_manager: 
-		print("manager")
 		district_manager.queue_redraw()
 	
 	for pos in visual_debug_cells:
