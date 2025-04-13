@@ -279,7 +279,7 @@ func is_sparse() -> bool:
 
 # 	return outgoing
 
-func a_star(id_grid : Grid, start : Vector2i, end : Vector2i) -> Array[Vector2i]: 
+func a_star(id_grid : Grid, start : Vector2i, end : Vector2i, n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> Array[Vector2i]: 
 	'''
 		Purpose:
 			Use the A* Algorithm to determine the path between 2 points in an ID grid
@@ -318,7 +318,7 @@ func a_star(id_grid : Grid, start : Vector2i, end : Vector2i) -> Array[Vector2i]
 		var curr : Vector2i = pq.pop_min()
 
 		# Iterate the nodes horizontal neighbors
-		for n in neighbors:
+		for n in neighbors[n_type]:
 			
 			# Get the global position of the neighbor
 			n = n + curr

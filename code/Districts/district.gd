@@ -73,7 +73,7 @@ func set_bounding_box(id_grid : Grid) -> void:
 		bounding_box_min = Vector2i(min(bounding_box_min[0], loc[0]), min(bounding_box_min[1], loc[1]))
 		bounding_box_max = Vector2i(max(bounding_box_max[0], loc[0]), max(bounding_box_max[1], loc[1]))
 
-func set_border(id_grid : Grid) -> void:
+func set_border(id_grid : Grid, n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> void:
 	'''
 		Purpose: 
 			Determine the border of the district and store in variables
@@ -90,7 +90,7 @@ func set_border(id_grid : Grid) -> void:
 	border_by_neighbor = {}
 
 	# Iterate every border of every location of the District
-	for loc in locations: for n in neighbors:
+	for loc in locations: for n in neighbors[n_type]:
 		var n_loc : Vector2i = loc + n
 
 		# Verify the neighbor is in bounds

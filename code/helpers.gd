@@ -1,18 +1,21 @@
 extends Control
 
-''' Array of vector increments to neighboring positions of a cell in discrete 2D space '''
-var neighbors : Array[Vector2i] = [
-		Vector2i(-1,-1), Vector2i(0,-1), Vector2i(1,-1),
-		Vector2i(-1,0),                 Vector2i(1,0),
-		Vector2i(-1,1), Vector2i(0,1)  , Vector2i(1,1)
-	]
+var neighbors : Dictionary = {
+	# Array of vector increments to neighboring positions of a cell in discrete 2D space
+	Enums.NeighborsType.EIGHT_NEIGHBORS : [
+			Vector2i(-1,-1), Vector2i(0,-1), Vector2i(1,-1),
+			Vector2i(-1,0),                 Vector2i(1,0),
+			Vector2i(-1,1), Vector2i(0,1)  , Vector2i(1,1)
+	],
 
-''' Array of non-diagonal vector increments to neighboring positions of a cell in discrete 2D space '''
-var four_neighbors : Array[Vector2i] = [
-					   Vector2i(0,-1), 
-		Vector2i(-1,0),                 Vector2i(1,0),
-					   Vector2i(0,1)
-	]
+	# Array of non-diagonal vector increments to neighboring positions of a cell in discrete 2D space
+	Enums.NeighborsType.FOUR_NEIGHBORS : [
+						Vector2i(0,-1), 
+			Vector2i(-1,0),                 Vector2i(1,0),
+						Vector2i(0,1)
+	],
+}
+
 	
 ''' Resource loaded for priority queue class '''
 var pqLoad : Resource = preload("res://code/priority_queue.gd")

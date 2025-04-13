@@ -25,3 +25,8 @@ enum GridInitType {
     RANDOM = 1,
     VORONOI = 2,
 }
+
+enum NeighborsType {
+    FOUR_NEIGHBORS = 0, 
+    EIGHT_NEIGHBORS = 1,
+}

@@ -202,7 +202,7 @@ func cellular_automata_trials(trial_threshold_values : Array[int], avoidance_ids
 	for threshold in trial_threshold_values:
 		cellular_automata(threshold, avoidance_ids)
 		
-func cellular_automata(threshold : int, avoidance_ids : Array[int] = []) -> void: 
+func cellular_automata(threshold : int, avoidance_ids : Array[int] = [], n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> void: 
 	'''
 		Purpose: 
 			Follows the cellular automata algorithm to update the values in id_grid based on the number of neighbors a cell has w.r.t. the threshold
@@ -231,7 +231,7 @@ func cellular_automata(threshold : int, avoidance_ids : Array[int] = []) -> void
 			var num_neighbors : int = 0
 
 			# Iterate all neighbors of (x,y)
-			for n in neighbors: 
+			for n in neighbors[n_type]: 
 				var n_pos = Vector2i(y, x) + n
 				
 				# Check that n_pos is in bounds
@@ -453,8 +453,7 @@ func flood_fill_elim_inside_terrain(target_id : int = Enums.Cell.OUTSIDE_SPACE) 
 
 	overwrite_cells_by_id([Enums.Cell.HELPER], Enums.Cell.OUTSIDE_SPACE)
 
-# TODO: Neighbors typing enum
-func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : int = Enums.Cell.VOID_SPACE_0, group_cells : Array = []) -> int:
+func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : int = Enums.Cell.VOID_SPACE_0, group_cells : Array = [], n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> int:
 	'''
 		Purpose: 
 			Set all cells with an ID of 'target_id' that are spatially connected to 'initial_pos' to 'new_id'
@@ -489,7 +488,7 @@ func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : in
 		var pos : Vector2i = valid_positions.pop_back()
 	
 		# Iterate all the positions neighbors
-		for n in neighbors:
+		for n in neighbors[n_type]:
 			var n_pos : Vector2i = pos + n 
 			
 			# Ensure the neighbor is in bounds of the grid and it's value is 'target_id' otherwise continue
@@ -568,7 +567,7 @@ func expand_id_grid(autonomous_ids : Array[int] = [], expanding_ids : Array[int]
 		var pos : Vector2i = active_expansion_cells.pop_front()
 		expand_id_grid_instance(pos, active_expansion_cells, autonomous_ids, expanding_ids)
 	
-func expand_id_grid_instance(pos : Vector2i, active_expansion_cells : Array, autonomous_ids : Array[int] = [], expanding_ids = []) -> void: 
+func expand_id_grid_instance(pos : Vector2i, active_expansion_cells : Array, autonomous_ids : Array[int] = [], expanding_ids = [], n_type : int = Enums.NeighborsType.FOUR_NEIGHBORS) -> void: 
 	'''
 		Purpose: 
 			Given a position in the grid, determine if the cell can validly expand to any of its neighbors, and do so
@@ -592,7 +591,7 @@ func expand_id_grid_instance(pos : Vector2i, active_expansion_cells : Array, aut
 	if not (is_district(cell_id) or cell_id in expanding_ids): return
 
 	# Determine if any neighbors are valid for expansion
-	for n in four_neighbors: 
+	for n in neighbors[n_type]:
 		var n_pos : Vector2i = pos + n
 
 		# Ensure the neighbor is within the bounds, and has an ID that is valid for expansion
@@ -722,7 +721,7 @@ func add_city_border(border_value : int = Enums.Cell.DISTRICT_WALL) -> void:
 
 	validate_city_border(border_value)
 
-func validate_city_border(border_value : int = Enums.Cell.CITY_WALL) -> void:
+func validate_city_border(border_value : int = Enums.Cell.CITY_WALL, n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> void:
 	'''   
 		Purpose: 
 			Validates the border by ensuring every cell with value 'border_value' borders null space (2)
@@ -743,7 +742,7 @@ func validate_city_border(border_value : int = Enums.Cell.CITY_WALL) -> void:
 
 		# Loop to ensure the cell neighbors OUTSIDE_SPACE
 		var is_border : bool = false
-		for n in neighbors:
+		for n in neighbors[n_type]:
 			var n_pos : Vector2i = Vector2i(y, x) + n
 			
 			if index_vec(n_pos) == Enums.Cell.OUTSIDE_SPACE:
@@ -756,7 +755,7 @@ func validate_city_border(border_value : int = Enums.Cell.CITY_WALL) -> void:
 	# Expand the grid to overwrite arbitrary values
 	expand_id_grid([Enums.Cell.OUTSIDE_SPACE, border_value, Enums.Cell.WATER, Enums.Cell.MAJOR_ROAD])
 
-func add_rough_city_border(border_value : int = Enums.Cell.CITY_WALL) -> void:
+func add_rough_city_border(border_value : int = Enums.Cell.CITY_WALL, n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> void:
 	'''
 		Purpose: 
 			Adds a rough city border by searching from null space cells (2) and setting as borders if they have a neighboring district cell (>2)
@@ -777,7 +776,7 @@ func add_rough_city_border(border_value : int = Enums.Cell.CITY_WALL) -> void:
 		if is_edge(Vector2i(y, x), Vector2i(height, width)): continue
 
 		# Iterate all neighbors
-		for n in neighbors:	
+		for n in neighbors[n_type]:	
 
 			# If the neighbor is a district, set the cell to a border ('border_value')
 			if is_district(index_vec(n + Vector2i(y, x))): 

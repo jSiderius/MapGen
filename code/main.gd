@@ -82,7 +82,7 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(12, 0.2)
 
 	# Add roads
-	# id_grid.add_major_roads()
+	id_grid.add_major_roads()
 	if debug: await redraw_and_pause(13, 0.2)
 
 	id_grid.cellular_automata_trials([3, 6])
