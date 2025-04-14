@@ -1,20 +1,21 @@
 extends Node
 
-class_name Cell
+class_name Tile
 
 var possibilities : Array
 var entropy : int
 var neighbors : Dictionary = {}
 
-func _init(x, y) -> void: 
-	possibilities = wfcConfig.cell_edges.keys()
+# TODO: x, y necessary ? 
+func _init(x : int, y : int, cell_id : int) -> void: 
+	possibilities = wfcConfig.tile_edges.keys()
 	entropy = len(possibilities)
 	
 # TODO: Types for enums
-func add_neighbor(direction, cell : Cell) -> void:
-	neighbors[direction] = cell
+func add_neighbor(direction, tile : Tile) -> void:
+	neighbors[direction] = tile
 	
-func get_neighbor(direction) -> Cell:
+func get_neighbor(direction) -> Tile:
 	return neighbors[direction]
 	
 func get_directions() -> Array: 
@@ -29,10 +30,9 @@ func get_entropy() -> int:
 func collapse():
 	var weights : Array[float] = []
 	for possibility in possibilities:
-		weights.append(wfcConfig.cell_weights[possibility])
+		weights.append(wfcConfig.tile_weights[possibility])
 	
-	possibilities = [possibilities[weighted_random_index(weights)]] #TODO: Taking out of the equation for not
-	#possibilities = [possibilities[randi() % len(possibilities)]]
+	possibilities = [possibilities[weighted_random_index(weights)]]
 	entropy = 0
 
 func constrain(neighbor_possibilities, direction): 
@@ -40,17 +40,17 @@ func constrain(neighbor_possibilities, direction):
 	
 	if entropy <= 0: return reduced
 	
-	# Creates an array of all possible edges facing this cell
+	# Creates an array of all possible edges facing this tile
 	var connecting_edges_set : Dictionary = {}
 	for possibility in neighbor_possibilities: 
-		for connecting_edge in wfcConfig.edge_rules[wfcConfig.cell_edges[possibility][direction]]:
+		for connecting_edge in wfcConfig.edge_rules[wfcConfig.tile_edges[possibility][direction]]:
 			connecting_edges_set[connecting_edge] = true
 
 	var opposite = wfcConfig.get_opposite_direction(direction)
 	
-	# Remove a possibility if it's edge is not reciprocated by any possible connection in the neighboring cell	
+	# Remove a possibility if it's edge is not reciprocated by any possible connection in the neighboring tile	
 	for i in range(possibilities.size() - 1, -1, -1): 
-		if wfcConfig.cell_edges[possibilities[i]][opposite] not in connecting_edges_set: 
+		if wfcConfig.tile_edges[possibilities[i]][opposite] not in connecting_edges_set: 
 			possibilities.remove_at(i)
 			reduced = true
 	
@@ -79,3 +79,5 @@ func weighted_random_index(weights : Array[float]) -> int:
 			return i
 			
 	return len(weights) - 1  # Fallback
+
+# TODO: Add recursive fail safes if necessary

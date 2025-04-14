@@ -150,7 +150,7 @@ func update_district_manager(flags : DistrictDataFlagStruct = null) -> void:
 func init_tile_manager() -> void:
 	tile_manager = TileManager.new(self)
 	add_child(tile_manager)
-	
+
 func init_empty_graph(): 
 	graph = graph_loader.new()
 
@@ -845,6 +845,10 @@ func draw_bounding_box(col : Color, ss : float, line_width : float, tl : Vector2
 func _draw() -> void:
 	''' Draws to screen based on the values class data ''' 
 
+	if tile_manager:
+		tile_manager.queue_redraw()
+		return
+
 	for y in range(height): for x in range(width):
 		
 		# Get the value of the node 
@@ -866,6 +870,9 @@ func _draw() -> void:
 	if district_manager: 
 		district_manager.queue_redraw()
 	
+	
+
 	for pos in visual_debug_cells:
 		var rect : Rect2 = Rect2(Vector2(pos[1]*square_size, pos[0]*square_size), Vector2(square_size, square_size)) #Takes pos = (y,x) and coverts to godot's coords (x, y)
 		draw_rect(rect, Color.RED)
+	

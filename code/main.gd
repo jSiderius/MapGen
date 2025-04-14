@@ -3,7 +3,7 @@ extends "res://code/helpers.gd"
 
 # export variables
 @export var debug : bool = true
-@export var square_size : float = 10.0
+@export var square_size : float = 30.0
 
 # global variables
 var grid_loader : Resource = preload("res://code/Grid/grid.gd")
