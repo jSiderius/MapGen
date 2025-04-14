@@ -1,6 +1,6 @@
 extends "res://code/helpers.gd"
 
-class_name Tiles
+class_name TileSplicer
 
 var tileset_texture : Texture
 var tileset_image : Image

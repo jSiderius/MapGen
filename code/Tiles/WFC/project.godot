@@ -10,16 +10,11 @@ config_version=5
 
 [application]
 
-config/name="Honours Project"
-run/main_scene="res://resizeable_board.tscn"
+config/name="WFC"
+run/main_scene="res://wfc.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
-config/icon="res://Resources/icon.svg"
+config/icon="res://icon.svg"
 
 [autoload]
 
-wfcConfig="*res://code/Tiles/wfc_config.gd"
-
-[display]
-
-window/size/viewport_width=1200
-window/size/viewport_height=900
+wfcConfig="*res://wfc_src/wfc_config.gd"

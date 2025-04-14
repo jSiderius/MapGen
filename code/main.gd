@@ -105,7 +105,9 @@ func _ready() -> void:
 	id_grid.update_district_manager()
 	id_grid.toggle_border_rendering(true)
 
+	id_grid.init_tile_manager()
 	if debug: await redraw_and_pause(20, 0.2)
+
 
 func _draw() -> void: 
 	if secondary_grid_debug: 

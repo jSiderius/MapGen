@@ -16,8 +16,7 @@ var district_manager : DistrictManager
 var graph_loader : Resource = preload("res://code/Graph/graph.gd")
 var graph : Graph
 
-var tile_splicer : Tiles
-var tileset : Resource = preload("res://tileset.png")
+var tile_manager : TileManager
 
 var colors_dict : Dictionary = {
 		Enums.Cell.DISTRICT_WALL : Color.BLACK, # District walls 
@@ -66,9 +65,6 @@ func _init(_width : int, _height : int, _square_size : int, init_type : int = En
 		init_random()
 		print_debug("Invalid grid initialization type")
 		push_error("Invalid grid initialization type")
-	
-	tile_splicer = Tiles.new(Image.load_from_file("res://tileset.png"), 16, 16, Vector2(square_size, square_size))
-	add_child(tile_splicer)
 
 
 func init_random():
@@ -151,6 +147,10 @@ func update_district_manager(flags : DistrictDataFlagStruct = null) -> void:
 	# Update the manager
 	district_manager.update_district_data(self, district_flag_struct)
 
+func init_tile_manager() -> void:
+	tile_manager = TileManager.new(self)
+	add_child(tile_manager)
+	
 func init_empty_graph(): 
 	graph = graph_loader.new()
 
@@ -862,10 +862,6 @@ func _draw() -> void:
 
 		# Draw the rect
 		draw_rect(rect, col)
-
-		if val == Enums.Cell.OUTSIDE_SPACE: 
-			var callback : Dictionary = tile_splicer.get_drawing_data(Vector2i(0, 1), Vector2i(y, x))
-			draw_texture_rect_region( tile_splicer.tileset_texture, callback["rect"], callback["src_rect"] )
 	
 	if district_manager: 
 		district_manager.queue_redraw()
