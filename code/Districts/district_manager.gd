@@ -5,7 +5,7 @@ class_name DistrictManager
 var district : Resource = preload("res://code/Districts/district.gd")
 var districts_dict : Dictionary = {}
 var size_location_data_recorded = false
-var center_district_id : int = 0
+var center_district_id : int
 var square_size : float
 
 func _init(id_grid : Grid, _square_size : float, data_flags : DistrictDataFlagStruct):
@@ -153,6 +153,21 @@ func get_keys_sorted_by_attribute(attribute : String, ascending : bool) -> Array
 	
 	return keys_arr
 
+func get_center_district() -> District:
+	''' Returns the center district '''
+
+	if not center_district_id: 
+		print_debug("Trying to get center district which has not been initialized")
+		push_error("Trying to get center district which has not been initialized")
+		return null
+	
+	if center_district_id not in districts_dict:
+		print_debug("District correlating to recorded center district ID not found")
+		push_error("District correlating to recorded center district ID not found")
+		return null
+
+	return districts_dict[center_district_id]
+
 func get_district_centers() -> Array[Vector2i]: 
 	''' Compiles and returns an array of the center of every district tracked by the district manager '''
 
@@ -165,7 +180,7 @@ func get_district_centers() -> Array[Vector2i]:
 func get_num_districts() -> int: 
 	''' Returns the number of districts which are being tracked by the manager '''
 	return len(districts_dict.keys())
-	
+
 func get_district(key : int) -> District:
 	''' Returns a district from 'districts_dict' if it exists '''
 
@@ -200,6 +215,15 @@ func get_borders_to_render():
 	
 	return borders_to_render
 
+func get_bounding_box(id_grid : Grid):
+	# TODO: Complete function, purpose is knowing the total range of the city to help with road initialization
+
+	var bb_min : Vector2i = Vector2i(id_grid.height, id_grid.width)
+	var bb_max : Vector2i = Vector2i(0, 0)
+
+	for d in districts_dict.values(): 
+		pass
+		
 func erase_district(id : int): 
 	''' Erases the district with ID matching the argument from the data model if it exists '''
 	

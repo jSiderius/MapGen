@@ -169,6 +169,24 @@ func random_edge_position(height: int, width: int,  avoidance_vector : Vector2i 
 		
 	return Vector2i(0, 0) # Shouldn't be reached
 
+func select_road_position(min_boundary : Vector2i, max_boundary : Vector2i, border : int): 
+	''' Selects an edge position from a custom defined boundary '''
+
+	var selected : Vector2i
+
+	match border:
+		Enums.Border.NORTH:
+			selected = Vector2i(min_boundary[0], min_boundary[1] + randi() % (max_boundary[1] - min_boundary[1]))
+		Enums.Border.SOUTH:
+			selected = Vector2i(max_boundary[1], min_boundary[1] + randi() % (max_boundary[1] - min_boundary[1]))
+		Enums.Border.WEST:
+			selected = Vector2i(min_boundary[0] + randi() % (max_boundary[0] - min_boundary[0]), min_boundary[1])
+		Enums.Border.EAST:
+			selected = Vector2i(min_boundary[0] + randi() % (max_boundary[0] - min_boundary[0]), max_boundary[1])
+	
+	return selected
+
+
 func nearest_edge_position(pos : Vector2i, boundary : Vector2i) -> Vector2i:
 	''' Gives the nearest edge position from a position'''
 

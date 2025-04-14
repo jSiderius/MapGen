@@ -363,7 +363,7 @@ func a_star(id_grid : Grid, start : Vector2i, end : Vector2i, n_type : int = Enu
 var alternate_weightings : Dictionary = {
 	Enums.Cell.DISTRICT_WALL : 100, 
 	Enums.Cell.OUTSIDE_SPACE : 20,
-	Enums.Cell.WATER : 10,
+	Enums.Cell.WATER : 40,
 
 }
 

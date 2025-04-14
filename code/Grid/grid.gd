@@ -16,6 +16,9 @@ var district_manager : DistrictManager
 var graph_loader : Resource = preload("res://code/Graph/graph.gd")
 var graph : Graph
 
+var tile_splicer : Tiles
+var tileset : Resource = preload("res://tileset.png")
+
 var colors_dict : Dictionary = {
 		Enums.Cell.DISTRICT_WALL : Color.BLACK, # District walls 
 		Enums.Cell.CITY_WALL : Color.BLACK, # City walls
@@ -63,6 +66,10 @@ func _init(_width : int, _height : int, _square_size : int, init_type : int = En
 		init_random()
 		print_debug("Invalid grid initialization type")
 		push_error("Invalid grid initialization type")
+	
+	tile_splicer = Tiles.new(Image.load_from_file("res://tileset.png"), 16, 16, Vector2(square_size, square_size))
+	add_child(tile_splicer)
+
 
 func init_random():
 	''' Generates a 2D grid with dimensions 'width'x'height', each value is randomly assigned to be VOID_SPACE_O (0) or VOID_SPACE_1 (1) '''
@@ -269,9 +276,6 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 		Return: void
 	'''
 
-	visual_debug_cells.append(start)
-	visual_debug_cells.append(end)
-	
 	# Validate arguments
 	if offset_probability > 1.0: offset_probability = 1.0
 	if offset_probability < 0.0: offset_probability = 0.0
@@ -332,12 +336,23 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 func add_major_roads():
 	init_empty_graph()
 
-	var road_start : Vector2i = random_edge_position(height, width, Vector2i(-1, -1), [Enums.Border.EAST])
-	var road_end : Vector2i = random_edge_position(height, width, Vector2(-1, -1), [Enums.Border.WEST])
-	# visual_debug_cells.append(road_start)
-	# visual_debug_cells.append(road_end)
+	var percentage : float = height * 0.1
+	var road_start : Vector2i = select_road_position(Vector2i(0, 0), Vector2i(height, width), Enums.Border.EAST)
+	var road_end : Vector2i = select_road_position(Vector2i(max(road_start[0] - percentage, 0), 0), Vector2i(min(road_start[0] + percentage, height), width), Enums.Border.WEST)
 	
-	var _path = graph.a_star(self, road_start, road_end)
+	# TODO These are a little off when working on this again
+	visual_debug_cells.append(Vector2i(max(road_start[0] - percentage, 0), 0))
+	visual_debug_cells.append(Vector2i(max(road_start[0] - percentage, width), width-1))
+	visual_debug_cells.append(Vector2i(min(road_start[0] + percentage, height), 0))
+	visual_debug_cells.append(Vector2i(min(road_start[0] + percentage, height), width-1))
+
+	district_manager.update_or_init_centrality_data(self)
+	var center_district : District = district_manager.get_center_district()
+
+	var _path = graph.a_star(self, road_start, road_end, Enums.NeighborsType.FOUR_NEIGHBORS)
+
+	# var _path = graph.a_star(self, road_start, center_district.center, Enums.NeighborsType.FOUR_NEIGHBORS)
+	# _path = _path + graph.a_star(self, center_district.center, road_end, Enums.NeighborsType.FOUR_NEIGHBORS)
 
 	for pos in _path: 
 		set_id_vec(pos, Enums.Cell.MAJOR_ROAD)
@@ -421,6 +436,7 @@ func flood_fill_elim_inside_terrain(target_id : int = Enums.Cell.OUTSIDE_SPACE) 
 		Purpose: 
 			Fill in 'target_id' cell groups which do not contain any edge cells, these are typically surrounded by districts or between districts and water
 			TODO: 	Small & Rare problem where a river completely surrounds outside space which then becomes a district
+					Bigger bug were land between a roads incorrectly cut off edges
 					Accout for wanting to replace with a specific value and not districts if wanted
 
 		Arguments: 
@@ -523,7 +539,10 @@ func parse_smallest_districts(num_districts : int = 15, new_cell_id : int = Enum
 	'''
 
 	# Ensure the district manager is initialized
-	if not district_manager: init_district_manager()
+	if district_manager: 
+		update_district_manager()
+	else: 
+		init_district_manager()
 
 	# Create a array the groups sorted by their sizes 
 	var keys : Array = district_manager.get_keys_sorted_by_attribute("size_", true)
@@ -843,6 +862,10 @@ func _draw() -> void:
 
 		# Draw the rect
 		draw_rect(rect, col)
+
+		if val == Enums.Cell.OUTSIDE_SPACE: 
+			var callback : Dictionary = tile_splicer.get_drawing_data(Vector2i(0, 1), Vector2i(y, x))
+			draw_texture_rect_region( tile_splicer.tileset_texture, callback["rect"], callback["src_rect"] )
 	
 	if district_manager: 
 		district_manager.queue_redraw()
