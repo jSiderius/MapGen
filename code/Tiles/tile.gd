@@ -1,25 +1,48 @@
-extends Node
+extends "res://code/helpers.gd"
 
 class_name Tile
 
 var possibilities : Array
 var entropy : int
-var neighbors : Dictionary = {}
+var tile_neighbors : Dictionary = {}
+var cell_id : int
+var overlay : int
 
 # TODO: x, y necessary ? 
-func _init(x : int, y : int, cell_id : int) -> void: 
-	possibilities = wfcConfig.tile_edges.keys()
+func _init(_cell_id : int) -> void:
+	cell_id = _cell_id 
+	if is_district(cell_id): 
+		cell_id = Enums.Cell.DISTRICT_STAND_IN
+
+	# possibilities = wfcConfig.tile_edges.keys()
+	if cell_id in wfcConfig.cell_to_tile_options: 
+		possibilities = wfcConfig.cell_to_tile_options[cell_id].duplicate()
+	else:
+		possibilities = wfcConfig.cell_to_tile_options[Enums.Cell.DISTRICT_STAND_IN].duplicate()
+
 	entropy = len(possibilities)
+
+	if entropy == 1: entropy = 0
 	
 # TODO: Types for enums
 func add_neighbor(direction, tile : Tile) -> void:
-	neighbors[direction] = tile
-	
+	tile_neighbors[direction] = tile
+
+func add_border(direction) -> void:
+	# tile_neighbors[direction] = null
+	if cell_id == Enums.Cell.WATER: 
+		# constrain([wfcConfig.TileType.WATER], direction)
+		pass
+
+func add_overlay() -> void:
+	var overlays = wfcConfig.OverlayTiles.values()
+	overlay = overlays[randi() % len(overlays)]
+
 func get_neighbor(direction) -> Tile:
-	return neighbors[direction]
+	return tile_neighbors[direction]
 	
 func get_directions() -> Array: 
-	return neighbors.keys()
+	return tile_neighbors.keys()
 	
 func get_possibilities() -> Array: 
 	return possibilities
@@ -27,19 +50,34 @@ func get_possibilities() -> Array:
 func get_entropy() -> int:
 	return entropy
 
+func has_priority_options() -> bool:
+	for possibility in possibilities: 
+		if possibility in wfcConfig.priority_options: return true
+	return false
+
 func collapse():
 	var weights : Array[float] = []
 	for possibility in possibilities:
 		weights.append(wfcConfig.tile_weights[possibility])
 	
 	possibilities = [possibilities[weighted_random_index(weights)]]
+	# possibilities = [possibilities[randi() % len(possibilities)]]
 	entropy = 0
+
+	if possibilities[0] in wfcConfig.valid_for_overlay:
+		add_overlay()
+
+func get_tile_type():
+	if len(possibilities) == 0:
+		return wfcConfig.TileType.TILE_ERROR
+	
+	return possibilities[0]
 
 func constrain(neighbor_possibilities, direction): 
 	var reduced : bool = false
 	
 	if entropy <= 0: return reduced
-	
+
 	# Creates an array of all possible edges facing this tile
 	var connecting_edges_set : Dictionary = {}
 	for possibility in neighbor_possibilities: 
@@ -48,6 +86,7 @@ func constrain(neighbor_possibilities, direction):
 
 	var opposite = wfcConfig.get_opposite_direction(direction)
 	
+	
 	# Remove a possibility if it's edge is not reciprocated by any possible connection in the neighboring tile	
 	for i in range(possibilities.size() - 1, -1, -1): 
 		if wfcConfig.tile_edges[possibilities[i]][opposite] not in connecting_edges_set: 
@@ -55,9 +94,11 @@ func constrain(neighbor_possibilities, direction):
 			reduced = true
 	
 			
-	if len(possibilities) == 0: print_debug("REMOVAL FAILURE")
+	if len(possibilities) == 0: 
+		possibilities = [wfcConfig.TileType.TILE_ERROR]
+		print_debug("REMOVAL FAILURE: Neighbor Possibilities: ", neighbor_possibilities)
 
-	self.entropy = len(possibilities)
+	entropy = len(possibilities) if len(possibilities) > 1 else 0
 
 	return reduced
 

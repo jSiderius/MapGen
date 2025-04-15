@@ -56,8 +56,8 @@ func update_or_init_size_location_data(id_grid : Grid) -> void:
 		
 		var id = id_grid.index(y, x)
 
-		# Don't evaluate non-districts
-		if not is_district(id): continue 
+		# Don't evaluate non-districts # TODO: We are going to track ALL values, BUT may need some fixes because of this previous assumption
+		# if not is_district(id): continue 
 
 		# Create a new district for the ID if one does not exist
 		if id not in districts_dict:
@@ -73,7 +73,7 @@ func update_or_init_size_location_data(id_grid : Grid) -> void:
 
 		# Determine which locations of the district are borders
 		districts_dict[key].set_border(id_grid)
-		
+	
 	size_location_data_recorded = true
 
 func update_or_init_percentage_data(id_grid : Grid) -> void: 
@@ -97,6 +97,7 @@ func update_or_init_percentage_data(id_grid : Grid) -> void:
 	# Calculate and store the size of each district
 	for key in districts_dict.keys():
 		districts_dict[key].percentage = float(districts_dict[key].size_) / total_size
+
 
 func update_or_init_centrality_data(id_grid : Grid) -> void: 
 	'''

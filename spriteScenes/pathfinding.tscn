@@ -1,7 +1,12 @@
-[gd_scene load_steps=3 format=3 uid="uid://bw45edttvkyqr"]
+[gd_scene load_steps=5 format=3 uid="uid://bw45edttvkyqr"]
 
 [ext_resource type="Script" path="res://spriteScenes/pathfinding.gd" id="1_sx1gb"]
 [ext_resource type="Texture2D" uid="uid://ic3mwoam0p5e" path="res://Resources/icon.svg" id="2_pelju"]
+[ext_resource type="Texture2D" uid="uid://csthmavorccln" path="res://tileset.png" id="3_difdu"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1joo7"]
+atlas = ExtResource("3_difdu")
+region = Rect2(16, 0, 0, 0)
 
 [node name="Node2D" type="Node2D"]
 position = Vector2(1, 0)
@@ -16,3 +21,7 @@ texture = ExtResource("2_pelju")
 position = Vector2(1054, 765)
 scale = Vector2(0.552808, 0.552808)
 texture = ExtResource("2_pelju")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(-218, 521)
+texture = SubResource("AtlasTexture_1joo7")

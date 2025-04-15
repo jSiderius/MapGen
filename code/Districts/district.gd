@@ -98,7 +98,8 @@ func set_border(id_grid : Grid, n_type : int = Enums.NeighborsType.EIGHT_NEIGHBO
 		var n_id : int = id_grid.index_vec(n_loc)
 
 		# If the neighbor is a district (>2) and not this district it is a border
-		if is_district(n_id) and n_id != id: 
+		# if is_district(n_id) and n_id != id: 
+		if n_id != id:
 			if n_id not in border_by_neighbor: border_by_neighbor[n_id] = []
 			border_by_neighbor[n_id].append(loc)
 			border.append(loc)

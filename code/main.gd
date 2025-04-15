@@ -3,7 +3,7 @@ extends "res://code/helpers.gd"
 
 # export variables
 @export var debug : bool = true
-@export var square_size : float = 30.0
+@export var square_size : float = 10.0
 
 # global variables
 var grid_loader : Resource = preload("res://code/Grid/grid.gd")
@@ -12,6 +12,7 @@ var secondary_grid_debug : Grid
 
 var river_start : Vector2i
 var river_end : Vector2i
+
 
 func _ready() -> void:
 
@@ -64,6 +65,7 @@ func _ready() -> void:
 	var voronoi_id_grid : Grid = grid_loader.new(id_grid.width, id_grid.height, square_size, Enums.GridInitType.VORONOI, {})
 	var edge_cell_ids = voronoi_id_grid.find_unique_edge_cell_ids()
 	voronoi_id_grid.overwrite_cells_by_id(edge_cell_ids, Enums.Cell.OUTSIDE_SPACE)
+	print(voronoi_id_grid.id_grid)
 	id_grid.copy_designated_ids(voronoi_id_grid, [Enums.Cell.OUTSIDE_SPACE], [Enums.Cell.WATER, Enums.Cell.MAJOR_ROAD])
 	if debug: await redraw_and_pause(10, 0.2)
 	
@@ -83,7 +85,7 @@ func _ready() -> void:
 
 	# Add roads
 	# TODO: Road shouldn't be selected on a water cell
-	id_grid.add_major_roads()
+	# id_grid.add_major_roads()
 	if debug: await redraw_and_pause(13, 0.2)
 	
 	id_grid.flood_fill()
@@ -94,7 +96,7 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(16, 0.2)
 
 	# Expand groups into null space (1)
-	id_grid.expand_id_grid([Enums.Cell.OUTSIDE_SPACE, Enums.Cell.MAJOR_ROAD, Enums.Cell.WATER], [Enums.Cell.WATER])
+	id_grid.expand_id_grid([Enums.Cell.OUTSIDE_SPACE, Enums.Cell.MAJOR_ROAD, Enums.Cell.WATER], [])
 	if debug: await redraw_and_pause(17, 0.2)
 
 	# # Increase the array resolution and add a new (thinner) border
@@ -104,6 +106,7 @@ func _ready() -> void:
 
 	id_grid.update_district_manager()
 	id_grid.toggle_border_rendering(true)
+	if debug: await redraw_and_pause(20, 0.2)
 
 	id_grid.init_tile_manager()
 	if debug: await redraw_and_pause(20, 0.2)

@@ -148,8 +148,12 @@ func update_district_manager(flags : DistrictDataFlagStruct = null) -> void:
 	district_manager.update_district_data(self, district_flag_struct)
 
 func init_tile_manager() -> void:
+	update_district_manager()
+
 	tile_manager = TileManager.new(self)
 	add_child(tile_manager)
+	await redraw_and_pause(-1, 2.0)
+	await tile_manager.wave_function_collapse(district_manager)
 
 func init_empty_graph(): 
 	graph = graph_loader.new()
@@ -649,13 +653,17 @@ func copy_designated_ids(from_grid : Grid, ids_to_copy : Array, autonomous_ids :
 	'''
 
 	# Exit the function if the arrays have different shapes
-	if not dimensions_match(from_grid): return
+	if not dimensions_match(from_grid): 
+		print_debug("Grid dimensions do not match: from_grid (", height,", ", width,") to_grid: (", height,", ", width,")")
+		push_error("Grid dimensions do not match: from_grid (", height,", ", width,") to_grid: (", height,", ", width,")")
+		return
 
 	# Iterate all cells in the 2D grid(s)
 	for y in range(height): for x in range(width):
 		# If the ID in 'from_grid' is in 'ids_to_copy' set the ID to that value
 		if from_grid.index(y, x) in ids_to_copy and not index(y, x) in autonomous_ids: 
 			set_id(y, x, from_grid.index(y, x))
+			print("set ", y, " ", x)
 
 func dimensions_match(other_grid : Grid) -> bool: 
 	''' Returns a bool indicating if this grid and the argument 'other_grid' have matching dimensions '''
@@ -824,8 +832,40 @@ func toggle_border_rendering(render : bool, n_largest : int = -1) -> void:
 
 	for i in range(n_largest):
 		var district : District = district_manager.get_district(sorted_keys[i])
-		if sorted_keys[i] == Enums.Cell.WATER: continue
+		if not is_district(sorted_keys[i]): continue
 		district.render_border = render
+	
+func add_border_to_grid() -> void:
+	
+	update_district_manager()
+
+	# Init the tracking set
+	var rendered_borders_set : Dictionary = {}
+	
+	# Iterate the districts
+	for d in district_manager.districts_dict.values(): 
+		
+		# Ensure the border should be rendered
+		if not d.render_border: continue
+
+		# Iterate the districts border divided by its neighbors
+		for key in d.border_by_neighbor:
+
+			# Check if the neighbor has been rendered
+			if key in rendered_borders_set: continue
+
+			# Iterate all border positions
+			for pos in d.border_by_neighbor[key]:
+				
+				set_id_vec(pos, Enums.Cell.CITY_WALL)
+				# Get the color and position of the node 
+				# var rect : Rect2 = Rect2(Vector2(pos[1]*square_size,pos[0]*square_size), Vector2(square_size / 2.0, square_size / 2.0))
+
+				# Draw the rect
+				# draw_rect(rect, Color.YELLOW)
+		
+		# Record that this border has been rendered 
+		rendered_borders_set[d.id]= true
 
 func draw_bounding_box(col : Color, ss : float, line_width : float, tl : Vector2i, br : Vector2i) -> void: 
 	# Convert the points to top-left and bottom-right for consistent rectangle rendering
@@ -869,8 +909,6 @@ func _draw() -> void:
 	
 	if district_manager: 
 		district_manager.queue_redraw()
-	
-	
 
 	for pos in visual_debug_cells:
 		var rect : Rect2 = Rect2(Vector2(pos[1]*square_size, pos[0]*square_size), Vector2(square_size, square_size)) #Takes pos = (y,x) and coverts to godot's coords (x, y)

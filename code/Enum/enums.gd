@@ -1,6 +1,8 @@
 class_name Enums
 
 enum Cell {
+    WATER_BORDER = -9,
+    DISTRICT_STAND_IN = -8,
     HELPER = -7,
     WATER = -6,
 
