@@ -1,9 +1,8 @@
 extends "res://code/helpers.gd"
 
-
 # export variables
 @export var debug : bool = true
-@export var square_size : float = 20.0
+@export var square_size : float = 15.0
 
 # global variables
 var grid_loader : Resource = preload("res://code/Grid/grid.gd")
@@ -31,9 +30,6 @@ func _ready() -> void:
 	# Fill the initial grid
 	id_grid = grid_loader.new(w_h.x, w_h.y, square_size, Enums.GridInitType.RANDOM)
 	add_child(id_grid)
-	test_outsidespace_wfc()
-	return
-
 	
 	if debug: await redraw_and_pause(1, 0.1)
 

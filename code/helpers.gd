@@ -18,7 +18,7 @@ var neighbors : Dictionary = {
 
 	
 ''' Resource loaded for priority queue class '''
-var pqLoad : Resource = preload("res://code/priority_queue.gd")
+var pqLoad : Resource = preload("res://code/Data Structures/priority_queue.gd")
 
 ''' The current minimum unique ID, stored globally to track ID's over the course of the program '''
 var MIN_UNIQUE_ID : int = 3
@@ -73,7 +73,7 @@ func get_random_color(_seed : int, hardsets : Vector3 = Vector3(-1, -1, -1), sca
 var last_exit_time : float = 0.0 
 # Takes the algorithm number (int) and the amount of time to stall (float)
 # Prints the amount of time the algorithm took, and stall for visual analysis 
-func redraw_and_pause(alg : int, stall : float = 1.0, screenshot = true) -> void:
+func redraw_and_pause(alg : int, stall : float = 1.0, screenshot = true, debug = true) -> void:
 	'''
 		Purpose: 
 			Redraw the screen and generate debugging information such as the time since the last call and creating a screenshot of the new state of the program
@@ -86,11 +86,13 @@ func redraw_and_pause(alg : int, stall : float = 1.0, screenshot = true) -> void
 				The amount of time to pause the entire program
 			screenshot: 
 				Boolean indicating if a screenshot should be taken
+			debug:
+				Boolean indicating if the function should print out
 
 		Return: void
 	'''
 
-	print("Algorithm ", alg, " complete in ", (Time.get_ticks_msec() / 1000.0) - last_exit_time, " seconds")
+	if debug: print("Algorithm ", alg, " complete in ", (Time.get_ticks_msec() / 1000.0) - last_exit_time, " seconds")
 	queue_redraw()
 	await get_tree().create_timer(stall).timeout
 	if screenshot: take_screenshot()

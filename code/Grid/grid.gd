@@ -157,7 +157,10 @@ func init_tile_manager() -> void:
 	
 	# Redraw and WFC
 	await redraw_and_pause(-1, 2.0)
-	await tile_manager.wave_function_collapse()
+
+	var start_time = Time.get_ticks_usec()
+	await tile_manager.wave_function_collapse_pq(false)
+	print("Runtime: ", (Time.get_ticks_usec() - start_time) / 1000000.0, " seconds")
 
 func init_empty_graph(): 
 	graph = graph_loader.new()
