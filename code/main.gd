@@ -3,7 +3,7 @@ extends "res://code/helpers.gd"
 
 # export variables
 @export var debug : bool = true
-@export var square_size : float = 10.0
+@export var square_size : float = 20.0
 
 # global variables
 var grid_loader : Resource = preload("res://code/Grid/grid.gd")
@@ -31,6 +31,10 @@ func _ready() -> void:
 	# Fill the initial grid
 	id_grid = grid_loader.new(w_h.x, w_h.y, square_size, Enums.GridInitType.RANDOM)
 	add_child(id_grid)
+	# test_outsidespace_wfc()
+	# return 
+
+	
 	if debug: await redraw_and_pause(1, 0.1)
 
 	# Run trials of cellular automata on the remaining {0,1} noise values 
@@ -104,13 +108,18 @@ func _ready() -> void:
 	# id_grid.add_city_border(Enums.Cell.DISTRICT_WALL) 
 	if debug: await redraw_and_pause(19, 0.2)
 
-	id_grid.update_district_manager()
-	id_grid.toggle_border_rendering(true)
+	# id_grid.toggle_border_rendering(true)
+	id_grid.add_border_to_grid()
 	if debug: await redraw_and_pause(20, 0.2)
+	# return
 
 	id_grid.init_tile_manager()
 	if debug: await redraw_and_pause(20, 0.2)
 
+func test_outsidespace_wfc():
+	id_grid.clear_grid([], Enums.Cell.OUTSIDE_SPACE)
+	id_grid.init_district_manager()
+	id_grid.init_tile_manager()
 
 func _draw() -> void: 
 	if secondary_grid_debug: 

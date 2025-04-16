@@ -12,6 +12,7 @@ var complete : bool = false
 var square_size : float
 
 func _init(id_grid : Grid) -> void:
+	print(id_grid)
 	height = id_grid.height
 	width = id_grid.width
 	square_size = id_grid.square_size
@@ -20,8 +21,14 @@ func _init(id_grid : Grid) -> void:
 	generate_tile_grid(id_grid)
 
 func generate_tile_grid(id_grid : Grid) -> void:
-
-	var water_border : Array[Vector2i] = id_grid.district_manager.get_district(Enums.Cell.WATER).border
+	
+	if not id_grid.district_manager:
+		print_debug("Grid does not contain district manager")
+		push_error("Grid does not contain district manager")
+		
+	var water_border : Array[Vector2i] = []
+	if id_grid.district_manager.has_district(Enums.Cell.WATER):
+		water_border = id_grid.district_manager.get_district(Enums.Cell.WATER).border
 
 	for y in range(height): 
 		tile_grid.append([])

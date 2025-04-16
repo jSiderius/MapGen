@@ -1,6 +1,7 @@
 class_name Enums
 
 enum Cell {
+    CITY_ROAD = -10,
     WATER_BORDER = -9,
     DISTRICT_STAND_IN = -8,
     HELPER = -7,

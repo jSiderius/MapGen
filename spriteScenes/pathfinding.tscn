@@ -6,7 +6,7 @@
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_1joo7"]
 atlas = ExtResource("3_difdu")
-region = Rect2(16, 0, 0, 0)
+region = Rect2(48, 512, 0, 64)
 
 [node name="Node2D" type="Node2D"]
 position = Vector2(1, 0)
@@ -23,5 +23,9 @@ scale = Vector2(0.552808, 0.552808)
 texture = ExtResource("2_pelju")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(-218, 521)
+texture = SubResource("AtlasTexture_1joo7")
+
+[node name="Sprite2D2" type="Sprite2D" parent="."]
 position = Vector2(-218, 521)
 texture = SubResource("AtlasTexture_1joo7")

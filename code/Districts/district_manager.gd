@@ -8,12 +8,12 @@ var size_location_data_recorded = false
 var center_district_id : int
 var square_size : float
 
-func _init(id_grid : Grid, _square_size : float, data_flags : DistrictDataFlagStruct):
+func _init(id_grid : Grid, _square_size : float):
 	square_size = _square_size
 
-	update_district_data(id_grid, data_flags)
+	update_district_data(id_grid)
 
-func update_district_data(id_grid : Grid, data_flags : DistrictDataFlagStruct) -> void:
+func update_district_data(id_grid : Grid) -> void:
 	'''
 		Purpose: 
 			Update the data model, choose which data to update according to the DistrictDataFlagStruct class
@@ -25,19 +25,16 @@ func update_district_data(id_grid : Grid, data_flags : DistrictDataFlagStruct) -
 				A class containing flags to determine which data to update
 
 		Return: void
+
+		Note: Removed the flag struct, none of the update_or_init functions have terrible runtimes where they should be avoided if possible
 	'''
 
-	# TODO: Appropriately handle initializing vs reseting
-	districts_dict = {}
-
-	if data_flags.update_size_location_data:
-		update_or_init_size_location_data(id_grid)
-	if data_flags.update_percentage_data: 
-		update_or_init_percentage_data(id_grid)
-	if data_flags.update_centrality_data: 
-		update_or_init_centrality_data(id_grid)
-	if data_flags.update_bounding_data: 
-		update_or_init_bounding_data(id_grid)
+	square_size = id_grid.square_size
+	
+	update_or_init_size_location_data(id_grid)
+	update_or_init_percentage_data(id_grid)
+	update_or_init_centrality_data(id_grid)
+	update_or_init_bounding_data(id_grid)
 		
 func update_or_init_size_location_data(id_grid : Grid) -> void: 
 	'''
@@ -98,7 +95,6 @@ func update_or_init_percentage_data(id_grid : Grid) -> void:
 	for key in districts_dict.keys():
 		districts_dict[key].percentage = float(districts_dict[key].size_) / total_size
 
-
 func update_or_init_centrality_data(id_grid : Grid) -> void: 
 	'''
 		Purpose:
@@ -129,9 +125,10 @@ func update_or_init_bounding_data(id_grid : Grid) -> void:
 		update_or_init_size_location_data(id_grid)
 
 	for key in districts_dict.keys(): 
-		districts_dict[key].set_bounding_box(id_grid)
+		districts_dict[key].set_bounding_box()
 
-func get_keys_sorted_by_attribute(attribute : String, ascending : bool) -> Array:
+
+func get_keys_sorted_by_attribute(attribute : String, ascending : bool) -> Array[int]:
 	'''
 		Purpose: 
 			Construct and return an array of district ID's sorted by a district class attribute
@@ -146,9 +143,11 @@ func get_keys_sorted_by_attribute(attribute : String, ascending : bool) -> Array
 			Array: The sorted array
 	'''
 
+	# Get the district values sorted by attribute
 	var districts_arr : Array = _sort_by_attribute(districts_dict.values(), attribute, ascending)
-	var keys_arr : Array = []
-
+	
+	# Compile the ordered array of keys
+	var keys_arr : Array[int] = []
 	for distr in districts_arr:
 		keys_arr.append(distr.id)
 	
@@ -180,19 +179,25 @@ func get_district_centers() -> Array[Vector2i]:
 
 func get_num_districts() -> int: 
 	''' Returns the number of districts which are being tracked by the manager '''
+	
 	return len(districts_dict.keys())
 
 func get_district(key : int) -> District:
 	''' Returns a district from 'districts_dict' if it exists '''
 
 	if key not in districts_dict:
-		# print_debug("Non-existent district (" + str(key) + ") requested from district manager")
-		# push_error("Non-existent district requested from district manager")
+		print_debug("Non-existent district (" + str(key) + ") requested from district manager")
+		push_error("Non-existent district (" + str(key) + ") requested from district manager")
 		return null
 
 	return districts_dict[key]
 
-func get_district_attribute(key : int, attribute : String): 
+func has_district(key : int) -> bool:
+	''' Returns a bool indicating if the manager has data for a district '''
+
+	return key in districts_dict
+
+func get_district_attribute(key : int, attribute : String):
 	''' Returns an attribute from a district in 'districts_dict' if it exists '''
 
 	if key not in districts_dict: 
@@ -207,25 +212,56 @@ func get_district_attribute(key : int, attribute : String):
 
 	return districts_dict[key][attribute]
 
-func get_borders_to_render(): 
+func get_borders_to_render() -> Array[Vector2i]:
+	''' Returns an array of every border cell in any district marked to render '''
+
 	var borders_to_render : Array[Vector2i] = []
 	
 	for d in districts_dict.values(): 
-		
 		if d.render_border: borders_to_render += d.border
 	
 	return borders_to_render
 
-func get_bounding_box(id_grid : Grid):
-	# TODO: Complete function, purpose is knowing the total range of the city to help with road initialization
+func get_district_cell_location_array(additional_ids : Array = []) -> Array[Vector2i]: 
+	''' Returns an array of the Vector2i location of every district cell (with ID > 2) '''
 
-	var bb_min : Vector2i = Vector2i(id_grid.height, id_grid.width)
+	var location_array : Array[Vector2i] = []
+
+	for key in districts_dict.keys():
+		if not (is_district(key) or key in additional_ids): continue
+			
+		location_array += districts_dict[key].locations
+	
+	return location_array
+
+func get_bounding_box() -> Rect2:
+	'''
+		Purpose:
+			Return the bounding box of all observed data
+		
+		Return: 
+			Rect2: (Vector2(bounding box min point), Vector2(bounding box max point))
+	'''
+
+	if len(districts_dict.values()) == 0:
+		print_debug("No districts tracked to observe bounding box")
+		push_error("No districts tracked to observe bounding box")
+		return Rect2(-1, -1, -1, -1)
+
+	var bb_min : Vector2i = Vector2i(2147483647, 2147483647) # INT 32 Max
 	var bb_max : Vector2i = Vector2i(0, 0)
 
 	for d in districts_dict.values(): 
-		pass
-		
-func erase_district(id : int): 
+		var d_bb : Rect2 = d.bounding_box
+		bb_min[0] = min(bb_min[0], d_bb.position)
+		bb_min[1] = min(bb_min[1], d_bb.size)
+
+		bb_max[0] = max(bb_max[0], d_bb.position)
+		bb_max[1] = max(bb_max[1], d_bb.size)
+	
+	return Rect2(bb_min, bb_max)
+	
+func erase_district(id : int) -> void: 
 	''' Erases the district with ID matching the argument from the data model if it exists '''
 	
 	if id in districts_dict: 

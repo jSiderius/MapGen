@@ -13,8 +13,7 @@ var border_by_neighbor : Dictionary = {}
 
 var render_border : bool = false
 var distance_to_grid_center : float
-var bounding_box_min : Vector2i
-var bounding_box_max : Vector2i
+var bounding_box : Rect2
 
 func _init(_id : int): 
 	id = _id
@@ -54,24 +53,22 @@ func set_center(id_grid : Grid):
 	
 	distance_to_grid_center = center.distance_to(Vector2(id_grid.height / 2.0, id_grid.width / 2.0))
 
-func set_bounding_box(id_grid : Grid) -> void:
+func set_bounding_box() -> void:
 	'''
 		Purpose: 
 			Determine the bounding box of the district and store in variables
 
-		Arguments: 
-			id_grid: 
-				The 2D grid used to update the data
-
 		Return: void
 	'''
 
-	bounding_box_max = Vector2i(0, 0)
-	bounding_box_min = Vector2i(id_grid.height, id_grid.width)
+	var bb_min : Vector2i = Vector2i(2147483647, 2147483647) # INT 32 Max
+	var bb_max : Vector2i = Vector2i(0, 0)
 
 	for loc in locations: 
-		bounding_box_min = Vector2i(min(bounding_box_min[0], loc[0]), min(bounding_box_min[1], loc[1]))
-		bounding_box_max = Vector2i(max(bounding_box_max[0], loc[0]), max(bounding_box_max[1], loc[1]))
+		bb_min = Vector2i(min(bb_min[0], loc[0]), min(bb_min[1], loc[1]))
+		bb_max = Vector2i(max(bb_max[0], loc[0]), max(bb_max[1], loc[1]))
+	
+	bounding_box = Rect2(bb_min, bb_max)
 
 func set_border(id_grid : Grid, n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> void:
 	'''
@@ -97,8 +94,7 @@ func set_border(id_grid : Grid, n_type : int = Enums.NeighborsType.EIGHT_NEIGHBO
 		if not bounds_check( n_loc, Vector2i(id_grid.height, id_grid.width)): continue
 		var n_id : int = id_grid.index_vec(n_loc)
 
-		# If the neighbor is a district (>2) and not this district it is a border
-		# if is_district(n_id) and n_id != id: 
+		# if the id doesn't match this districts id record the cell as a border
 		if n_id != id:
 			if n_id not in border_by_neighbor: border_by_neighbor[n_id] = []
 			border_by_neighbor[n_id].append(loc)

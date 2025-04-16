@@ -18,7 +18,11 @@ var graph : Graph
 
 var tile_manager : TileManager
 
+var district_manager_queue_update : bool = true
+
+''' Dictionary mapping cell id's to the color they should be rendered in _draw() when relevant '''
 var colors_dict : Dictionary = {
+		Enums.Cell.CITY_ROAD : Color.PURPLE,
 		Enums.Cell.DISTRICT_WALL : Color.BLACK, # District walls 
 		Enums.Cell.CITY_WALL : Color.BLACK, # City walls
 		Enums.Cell.DISTRICT_CENTER : Color.BLUE, #District Center
@@ -120,56 +124,58 @@ func init_voronoi(arguments : Dictionary) -> void:
 	for y in range(height): for x in range(width): 
 		set_id(y, x, get_position_id_by_voronoi_cell_locations(cells, Vector2i(y, x)) + 1)
 
-func init_district_manager(flags : DistrictDataFlagStruct = null) -> void:
+func init_district_manager() -> void:
 	''' Initialize the district manager to track information about the districts '''
-	
-	# Initialize the flags
-	if flags:
-		district_flag_struct = flags
-	else: 
-		district_flag_struct = district_flag_struct_loader.new(true)
 		
 	# Initialize the manager
-	district_manager = district_manager_loader.new(self, square_size, district_flag_struct)
+	district_manager = district_manager_loader.new(self, square_size)
 	add_child(district_manager)
+	district_manager_queue_update = false
 
-func update_district_manager(flags : DistrictDataFlagStruct = null) -> void:
+func update_district_manager() -> void:
 	''' Update the district manager with the currently set flags or new ones ''' 
 	
-	# Update the flags if necessary
-	if flags: district_flag_struct = flags
-	
+	if not district_manager_queue_update: return
+
 	# Init the district manager if necessary
 	if not district_manager: 
-		init_district_manager(flags)
+		init_district_manager()
 		return
 		
 	# Update the manager
-	district_manager.update_district_data(self, district_flag_struct)
+	district_manager.update_district_data(self)
+	district_manager_queue_update = false
 
 func init_tile_manager() -> void:
+	
+	# Update district data
 	update_district_manager()
 
+	# Init manager
 	tile_manager = TileManager.new(self)
 	add_child(tile_manager)
+	
+	# Redraw and WFC
 	await redraw_and_pause(-1, 2.0)
 	await tile_manager.wave_function_collapse(district_manager)
 
 func init_empty_graph(): 
 	graph = graph_loader.new()
 
+# TODO:
 func update_graph():
 	pass
 
 func index(y : int, x : int):
 	''' get an id from the grid by a y, x index '''
+	
 	return id_grid[y][x]
 
 func index_vec(vec : Vector2i):
 	''' get an id from the grid by a y, x vector
 		NOTE: Vector should already be formatted in [y][x] '''
 
-	return id_grid[vec.x][vec.y]
+	return id_grid[vec[0]][vec[1]]
 
 func set_id(y : int, x : int, val : int) -> void:
 	''' set an id from the grid by a y, x index '''
@@ -180,7 +186,7 @@ func set_id_vec(vec : Vector2i, val : int) -> void:
 	''' get an id from the grid by a y, x vector
 		NOTE: Vector should already be formatted in [y][x] '''
 
-	id_grid[vec.x][vec.y] = val
+	id_grid[vec[0]][vec[1]] = val
 
 func clear_grid(immune_ids : Array[int] = [], override_value : int = Enums.Cell.VOID_SPACE_0) -> void:
 	''' Clears any value in the grid not in 'immune_ids' and sets them to 'override_value' '''
@@ -189,12 +195,16 @@ func clear_grid(immune_ids : Array[int] = [], override_value : int = Enums.Cell.
 		if index(y, x) not in immune_ids:
 			set_id(y, x, override_value)
 
+	district_manager_queue_update = true
+
 func clear_grid_to_noise(immune_ids : Array[int] = [], noise_values : Array[int] = [Enums.Cell.VOID_SPACE_0, Enums.Cell.VOID_SPACE_1]) -> void:
 	''' Clears any value in the grid not in 'immune_ids' and sets them randomly to values in 'noise_values' '''
 	
 	for y in range(height): for x in range(width):
 		if index(y, x) not in immune_ids:
 			set_id(y, x, noise_values[randi() % len(noise_values)])
+	
+	district_manager_queue_update = true
 
 func cellular_automata_trials(trial_threshold_values : Array[int], avoidance_ids : Array[int] = [Enums.Cell.WATER]) -> void:
 	'''
@@ -212,6 +222,8 @@ func cellular_automata_trials(trial_threshold_values : Array[int], avoidance_ids
 
 	for threshold in trial_threshold_values:
 		cellular_automata(threshold, avoidance_ids)
+	
+	district_manager_queue_update = true
 		
 func cellular_automata(threshold : int, avoidance_ids : Array[int] = [], n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> void: 
 	'''
@@ -264,6 +276,8 @@ func cellular_automata(threshold : int, avoidance_ids : Array[int] = [], n_type 
 			new_grid[y].append(Enums.Cell.VOID_SPACE_1 if num_neighbors >= threshold else Enums.Cell.VOID_SPACE_0)
 	
 	id_grid = new_grid
+
+	district_manager_queue_update = true
 	
 func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8, offset_magnitude : int = 1, cube_size : int = 4) -> void:
 	'''
@@ -335,6 +349,8 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 	if not found_edge:
 		# Recursively ensure the river reaches an edge
 		add_river(last, nearest_edge_position(last, Vector2i(height, width)), offset_probability, offset_magnitude, cube_size)
+	
+	district_manager_queue_update = true
 
 # TODO: Consolidate with Graph
 func add_major_roads():
@@ -350,7 +366,7 @@ func add_major_roads():
 	visual_debug_cells.append(Vector2i(min(road_start[0] + percentage, height), 0))
 	visual_debug_cells.append(Vector2i(min(road_start[0] + percentage, height), width-1))
 
-	district_manager.update_or_init_centrality_data(self)
+	update_district_manager()
 	var center_district : District = district_manager.get_center_district()
 
 	var _path = graph.a_star(self, road_start, road_end, Enums.NeighborsType.FOUR_NEIGHBORS)
@@ -360,6 +376,8 @@ func add_major_roads():
 
 	for pos in _path: 
 		set_id_vec(pos, Enums.Cell.MAJOR_ROAD)
+	
+	district_manager_queue_update = true
 
 func flood_fill(target_id : int = Enums.Cell.VOID_SPACE_0) -> void: 
 	'''
@@ -385,6 +403,8 @@ func flood_fill(target_id : int = Enums.Cell.VOID_SPACE_0) -> void:
 
 		# Update MIN_UNIQUE_ID
 		MIN_UNIQUE_ID += 1
+
+	district_manager_queue_update = true
 
 func flood_fill_elim_annexed_space(threshold : float = 0.25, target_id : int = Enums.Cell.VOID_SPACE_1, new_id : int = Enums.Cell.OUTSIDE_SPACE) -> void:
 	'''
@@ -435,6 +455,8 @@ func flood_fill_elim_annexed_space(threshold : float = 0.25, target_id : int = E
 		for pos in groups[i]:
 			set_id_vec(pos, new_id)
 
+	district_manager_queue_update = true
+
 func flood_fill_elim_inside_terrain(target_id : int = Enums.Cell.OUTSIDE_SPACE) -> void: 
 	'''
 		Purpose: 
@@ -472,6 +494,8 @@ func flood_fill_elim_inside_terrain(target_id : int = Enums.Cell.OUTSIDE_SPACE) 
 		MIN_UNIQUE_ID += 1
 
 	overwrite_cells_by_id([Enums.Cell.HELPER], Enums.Cell.OUTSIDE_SPACE)
+
+	district_manager_queue_update = true
 
 func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : int = Enums.Cell.VOID_SPACE_0, group_cells : Array = [], n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> int:
 	'''
@@ -521,6 +545,8 @@ func flood_fill_solve_group(initial_pos : Vector2i, new_id : int, target_id : in
 			set_id_vec(n_pos, new_id)
 			group_size += 1
 	
+	district_manager_queue_update = true
+
 	return group_size
 
 func parse_smallest_districts(num_districts : int = 15, new_cell_id : int = Enums.Cell.VOID_SPACE_1) -> void: 
@@ -542,11 +568,8 @@ func parse_smallest_districts(num_districts : int = 15, new_cell_id : int = Enum
 			Array: 'id_grid' manipulated by the algorithm
 	'''
 
-	# Ensure the district manager is initialized
-	if district_manager: 
-		update_district_manager()
-	else: 
-		init_district_manager()
+	# Ensure the district manager is updated or initialized initialized
+	update_district_manager()
 
 	# Create a array the groups sorted by their sizes 
 	var keys : Array = district_manager.get_keys_sorted_by_attribute("size_", true)
@@ -565,6 +588,8 @@ func parse_smallest_districts(num_districts : int = 15, new_cell_id : int = Enum
 	# Remove the districts from the district manager
 	for key in groups_to_parse: 
 		district_manager.erase_district(key)
+	
+	district_manager_queue_update = true
 
 func expand_id_grid(autonomous_ids : Array[int] = [], expanding_ids : Array[int] = []) -> void: 
 	'''
@@ -582,13 +607,17 @@ func expand_id_grid(autonomous_ids : Array[int] = [], expanding_ids : Array[int]
 			- pop_at(randi() mod len(checks)) gives a more random distribution, pop_front() is most spatially accurate to the starting point, pop_back() is extremelly biased
 	'''
 
+	update_district_manager()
+
 	# Get the array of every district cell in the grid
-	var active_expansion_cells : Array[Vector2i] = get_district_cell_location_array(expanding_ids)
+	var active_expansion_cells : Array[Vector2i] = district_manager.get_district_cell_location_array(expanding_ids)
 	
 	# Assess if an active cell has any expandable neighbors (which then become active) until there are no active cells
 	while len(active_expansion_cells) > 0:
 		var pos : Vector2i = active_expansion_cells.pop_front()
 		expand_id_grid_instance(pos, active_expansion_cells, autonomous_ids, expanding_ids)
+	
+	district_manager_queue_update = true
 	
 func expand_id_grid_instance(pos : Vector2i, active_expansion_cells : Array, autonomous_ids : Array[int] = [], expanding_ids = [], n_type : int = Enums.NeighborsType.FOUR_NEIGHBORS) -> void: 
 	'''
@@ -624,19 +653,8 @@ func expand_id_grid_instance(pos : Vector2i, active_expansion_cells : Array, aut
 		# Set the neighbors value and add it to the active expansion cells
 		set_id_vec(n_pos, cell_id)
 		active_expansion_cells.append(n_pos)
-
-func get_district_cell_location_array(additional_ids : Array = []) -> Array[Vector2i]: 
-	''' Returns an array of the Vector2i location of every district cell (with ID > 2) '''
-	''' TODO: Seems like a district manager thing '''
-
-	var location_array : Array[Vector2i] = []
-
-	for y in height: for x in width:
-		var pos = Vector2i(y, x)
-		if is_district(index_vec(pos)) or index_vec(pos) in additional_ids: 
-			location_array.append(pos)
 	
-	return location_array
+	district_manager_queue_update = true
 
 func copy_designated_ids(from_grid : Grid, ids_to_copy : Array, autonomous_ids : Array = []) -> void:
 	'''
@@ -663,7 +681,8 @@ func copy_designated_ids(from_grid : Grid, ids_to_copy : Array, autonomous_ids :
 		# If the ID in 'from_grid' is in 'ids_to_copy' set the ID to that value
 		if from_grid.index(y, x) in ids_to_copy and not index(y, x) in autonomous_ids: 
 			set_id(y, x, from_grid.index(y, x))
-			print("set ", y, " ", x)
+
+	district_manager_queue_update = true
 
 func dimensions_match(other_grid : Grid) -> bool: 
 	''' Returns a bool indicating if this grid and the argument 'other_grid' have matching dimensions '''
@@ -709,6 +728,8 @@ func overwrite_cells_by_id(ids_to_overwrite : Array, new_cell_id : int = Enums.C
 		# If a cells ID is in ids_to_overwrite, set its new id as new_cell_id
 		if index(y, x) in ids_to_overwrite: 
 			set_id(y, x, new_cell_id)
+	
+	district_manager_queue_update = true
 			
 func increase_array_resolution(multiplier : float = 2) -> void:
 	'''	
@@ -739,7 +760,8 @@ func increase_array_resolution(multiplier : float = 2) -> void:
 
 	# Update the grid and district manager
 	id_grid = id_grid_new	
-	update_district_manager()
+
+	district_manager_queue_update = true
 
 func add_city_border(border_value : int = Enums.Cell.DISTRICT_WALL) -> void:
 	''' Adds a border of cells with value 'border_value' between null space (2) and district space (>2) '''
@@ -747,6 +769,8 @@ func add_city_border(border_value : int = Enums.Cell.DISTRICT_WALL) -> void:
 	add_rough_city_border(border_value)
 
 	validate_city_border(border_value)
+
+	district_manager_queue_update = true
 
 func validate_city_border(border_value : int = Enums.Cell.CITY_WALL, n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> void:
 	'''   
@@ -782,6 +806,8 @@ func validate_city_border(border_value : int = Enums.Cell.CITY_WALL, n_type : in
 	# Expand the grid to overwrite arbitrary values
 	expand_id_grid([Enums.Cell.OUTSIDE_SPACE, border_value, Enums.Cell.WATER, Enums.Cell.MAJOR_ROAD])
 
+	district_manager_queue_update = true
+
 func add_rough_city_border(border_value : int = Enums.Cell.CITY_WALL, n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> void:
 	'''
 		Purpose: 
@@ -809,6 +835,8 @@ func add_rough_city_border(border_value : int = Enums.Cell.CITY_WALL, n_type : i
 			if is_district(index_vec(n + Vector2i(y, x))): 
 				set_id(y, x, border_value)
 				break
+	
+	district_manager_queue_update = true
 
 func toggle_border_rendering(render : bool, n_largest : int = -1) -> void:
 	'''
@@ -824,6 +852,8 @@ func toggle_border_rendering(render : bool, n_largest : int = -1) -> void:
 		Return: void
 	'''
 
+	update_district_manager()
+
 	# Select districts sorted by size (gives the ability to render the n largest if wanted)
 	var sorted_keys : Array = district_manager.get_keys_sorted_by_attribute("size_", false)
 
@@ -834,9 +864,17 @@ func toggle_border_rendering(render : bool, n_largest : int = -1) -> void:
 		var district : District = district_manager.get_district(sorted_keys[i])
 		if not is_district(sorted_keys[i]): continue
 		district.render_border = render
-	
-func add_border_to_grid() -> void:
-	
+
+func add_border_to_grid(render_all : bool = true) -> void:
+	'''
+		Purpose:
+			Adds every border that should be rendered to the grid
+		
+		Arguments:
+			render_all: bool for if all districts should render borders regardless of status
+		
+		Return: void
+	'''
 	update_district_manager()
 
 	# Init the tracking set
@@ -846,44 +884,28 @@ func add_border_to_grid() -> void:
 	for d in district_manager.districts_dict.values(): 
 		
 		# Ensure the border should be rendered
-		if not d.render_border: continue
+		if not d.render_border and not render_all: continue
 
 		# Iterate the districts border divided by its neighbors
 		for key in d.border_by_neighbor:
 
 			# Check if the neighbor has been rendered
-			if key in rendered_borders_set: continue
+			if key in rendered_borders_set or key in [Enums.Cell.WATER , Enums.Cell.OUTSIDE_SPACE]: continue
 
 			# Iterate all border positions
 			for pos in d.border_by_neighbor[key]:
 				
-				set_id_vec(pos, Enums.Cell.CITY_WALL)
-				# Get the color and position of the node 
-				# var rect : Rect2 = Rect2(Vector2(pos[1]*square_size,pos[0]*square_size), Vector2(square_size / 2.0, square_size / 2.0))
-
-				# Draw the rect
-				# draw_rect(rect, Color.YELLOW)
+				set_id_vec(pos, Enums.Cell.CITY_ROAD)
 		
 		# Record that this border has been rendered 
 		rendered_borders_set[d.id]= true
-
-func draw_bounding_box(col : Color, ss : float, line_width : float, tl : Vector2i, br : Vector2i) -> void: 
-	# Convert the points to top-left and bottom-right for consistent rectangle rendering
-	var top_left = Vector2(ss * min(tl.x, br.x), ss * min(tl.y, br.y))
-	var bottom_right = Vector2(ss * (max(tl.x, br.x) + 1), ss * (max(tl.y, br.y) + 1))
 	
-	# Define the corners
-	var top_right = Vector2(bottom_right.x, top_left.y)
-	var bottom_left = Vector2(top_left.x, bottom_right.y)
-
-	# Draw the four sides of the rectangle with the specified line width
-	draw_line(top_left, top_right, col, line_width)  # Top side
-	draw_line(top_right, bottom_right, col, line_width)  # Right side
-	draw_line(bottom_right, bottom_left, col, line_width)  # Bottom side
-	draw_line(bottom_left, top_left, col, line_width)  # Left side
+	district_manager_queue_update = true
 
 func _draw() -> void:
 	''' Draws to screen based on the values class data ''' 
+
+	update_district_manager()
 
 	if tile_manager:
 		tile_manager.queue_redraw()
