@@ -28,15 +28,13 @@ func _init(_cell_id : int) -> void:
 func add_neighbor(direction, tile : Tile) -> void:
 	tile_neighbors[direction] = tile
 
-func add_border(direction) -> void:
-	# tile_neighbors[direction] = null
-	if cell_id == Enums.Cell.WATER: 
-		# constrain([wfcConfig.TileType.WATER], direction)
-		pass
-
 func add_overlay() -> void:
 	var overlays = wfcConfig.OverlayTiles.values()
-	overlay = overlays[randi() % len(overlays)]
+	var weights : Array[float] = []
+	for o in overlays:
+		weights.append(wfcConfig.overlay_weights[o])
+
+	overlay = overlays[weighted_random_index(weights)]
 
 func get_neighbor(direction) -> Tile:
 	return tile_neighbors[direction]
@@ -64,7 +62,7 @@ func collapse():
 	# possibilities = [possibilities[randi() % len(possibilities)]]
 	entropy = 0
 
-	if possibilities[0] in wfcConfig.valid_for_overlay:
+	if possibilities[0] in wfcConfig.valid_for_overlay and randf() <= wfcConfig.overlay_chance:
 		add_overlay()
 
 func get_tile_type():

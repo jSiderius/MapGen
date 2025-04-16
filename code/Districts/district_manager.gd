@@ -4,7 +4,6 @@ class_name DistrictManager
 
 var district : Resource = preload("res://code/Districts/district.gd")
 var districts_dict : Dictionary = {}
-var size_location_data_recorded = false
 var center_district_id : int
 var square_size : float
 
@@ -30,11 +29,12 @@ func update_district_data(id_grid : Grid) -> void:
 	'''
 
 	square_size = id_grid.square_size
-	
+	districts_dict = {}
+
 	update_or_init_size_location_data(id_grid)
 	update_or_init_percentage_data(id_grid)
 	update_or_init_centrality_data(id_grid)
-	update_or_init_bounding_data(id_grid)
+	update_or_init_bounding_data()
 		
 func update_or_init_size_location_data(id_grid : Grid) -> void: 
 	'''
@@ -71,8 +71,6 @@ func update_or_init_size_location_data(id_grid : Grid) -> void:
 		# Determine which locations of the district are borders
 		districts_dict[key].set_border(id_grid)
 	
-	size_location_data_recorded = true
-
 func update_or_init_percentage_data(id_grid : Grid) -> void: 
 	'''
 		Purpose:
@@ -87,10 +85,6 @@ func update_or_init_percentage_data(id_grid : Grid) -> void:
 
 	var total_size : float = id_grid.height * id_grid.width
 
-	# Ensure size data has been recorded
-	if not size_location_data_recorded:
-		update_or_init_size_location_data(id_grid)
-	
 	# Calculate and store the size of each district
 	for key in districts_dict.keys():
 		districts_dict[key].percentage = float(districts_dict[key].size_) / total_size
@@ -107,10 +101,6 @@ func update_or_init_centrality_data(id_grid : Grid) -> void:
 		Return: void
 	'''
 
-	# Ensure location data has been recorded
-	if not size_location_data_recorded:
-		update_or_init_size_location_data(id_grid)
-
 	# Defer to the District class to calculate the data for each districts
 	for key in districts_dict.keys():
 		districts_dict[key].set_center(id_grid)
@@ -118,11 +108,7 @@ func update_or_init_centrality_data(id_grid : Grid) -> void:
 	var keys = get_keys_sorted_by_attribute("distance_to_grid_center", true)
 	center_district_id = keys[0]
 	
-func update_or_init_bounding_data(id_grid : Grid) -> void: 
-
-	# Ensure location data has been recorded
-	if not size_location_data_recorded:
-		update_or_init_size_location_data(id_grid)
+func update_or_init_bounding_data() -> void: 
 
 	for key in districts_dict.keys(): 
 		districts_dict[key].set_bounding_box()

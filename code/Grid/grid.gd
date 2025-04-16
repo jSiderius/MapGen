@@ -157,7 +157,7 @@ func init_tile_manager() -> void:
 	
 	# Redraw and WFC
 	await redraw_and_pause(-1, 2.0)
-	await tile_manager.wave_function_collapse(district_manager)
+	await tile_manager.wave_function_collapse()
 
 func init_empty_graph(): 
 	graph = graph_loader.new()
@@ -367,10 +367,10 @@ func add_major_roads():
 	visual_debug_cells.append(Vector2i(min(road_start[0] + percentage, height), width-1))
 
 	update_district_manager()
-	var center_district : District = district_manager.get_center_district()
 
 	var _path = graph.a_star(self, road_start, road_end, Enums.NeighborsType.FOUR_NEIGHBORS)
 
+	# var center_district : District = district_manager.get_center_district()
 	# var _path = graph.a_star(self, road_start, center_district.center, Enums.NeighborsType.FOUR_NEIGHBORS)
 	# _path = _path + graph.a_star(self, center_district.center, road_end, Enums.NeighborsType.FOUR_NEIGHBORS)
 
@@ -884,13 +884,14 @@ func add_border_to_grid(render_all : bool = true) -> void:
 	for d in district_manager.districts_dict.values(): 
 		
 		# Ensure the border should be rendered
-		if not d.render_border and not render_all: continue
+		if not (d.render_border or render_all) or not is_district(d.id): continue
 
 		# Iterate the districts border divided by its neighbors
 		for key in d.border_by_neighbor:
 
 			# Check if the neighbor has been rendered
-			if key in rendered_borders_set or key in [Enums.Cell.WATER , Enums.Cell.OUTSIDE_SPACE]: continue
+			#  or key in [Enums.Cell.WATER , Enums.Cell.OUTSIDE_SPACE]
+			if key in rendered_borders_set: continue
 
 			# Iterate all border positions
 			for pos in d.border_by_neighbor[key]:

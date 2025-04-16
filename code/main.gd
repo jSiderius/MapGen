@@ -31,8 +31,8 @@ func _ready() -> void:
 	# Fill the initial grid
 	id_grid = grid_loader.new(w_h.x, w_h.y, square_size, Enums.GridInitType.RANDOM)
 	add_child(id_grid)
-	# test_outsidespace_wfc()
-	# return 
+	test_outsidespace_wfc()
+	return
 
 	
 	if debug: await redraw_and_pause(1, 0.1)
@@ -109,7 +109,7 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(19, 0.2)
 
 	# id_grid.toggle_border_rendering(true)
-	id_grid.add_border_to_grid()
+	id_grid.add_border_to_grid(true)
 	if debug: await redraw_and_pause(20, 0.2)
 	# return
 

@@ -54,31 +54,23 @@ func generate_tile_grid(id_grid : Grid) -> void:
 		var tile : Tile = tile_grid[y][x]
 		var tile_possibilities = tile.get_possibilities()
 		
-		# Initialize NESW Neighbors and Borders
+		# Initialize NESW Neighbors
 		if y > 0:
 			tile.add_neighbor(wfcConfig.Dir.NORTH, tile_grid[y-1][x])
 			tile_grid[y-1][x].constrain(tile_possibilities, wfcConfig.Dir.NORTH)
 			tile.constrain(tile_grid[y-1][x].possibilities, wfcConfig.Dir.SOUTH)
-		else: 
-			tile.add_border(wfcConfig.Dir.NORTH)
 		if y < height-1:
 			tile.add_neighbor(wfcConfig.Dir.SOUTH, tile_grid[y+1][x])
 			tile_grid[y+1][x].constrain(tile_possibilities, wfcConfig.Dir.SOUTH)
 			tile.constrain(tile_grid[y+1][x].possibilities, wfcConfig.Dir.NORTH)
-		else: 
-			tile.add_border(wfcConfig.Dir.SOUTH)
 		if x > 0:
 			tile.add_neighbor(wfcConfig.Dir.WEST, tile_grid[y][x-1])
 			tile_grid[y][x-1].constrain(tile_possibilities, wfcConfig.Dir.WEST)
 			tile.constrain(tile_grid[y][x-1].possibilities, wfcConfig.Dir.EAST)
-		else: 
-			tile.add_border(wfcConfig.Dir.WEST)
 		if x < width - 1:
 			tile.add_neighbor(wfcConfig.Dir.EAST, tile_grid[y][x+1])
 			tile_grid[y][x+1].constrain(tile_possibilities, wfcConfig.Dir.EAST)
 			tile.constrain(tile_grid[y][x+1].possibilities, wfcConfig.Dir.WEST)
-		else: 
-			tile.add_border(wfcConfig.Dir.EAST)
 
 func get_entropy(y : int, x : int) -> int:
 	''' Returns the entropy of the tile at (y, x)'''
@@ -137,6 +129,9 @@ func get_lowest_entropy_tile_list() -> Array[Tile]:
 	
 	return lowest_entropy_tiles
 
+# func get_lowest_entropy_tile_pq() -> Tile:
+	# pass
+
 func wave_function_collapse() -> void:
 	''' Execute the wave function collapse algorithm '''
 
@@ -166,7 +161,7 @@ func wave_function_collapse_iteration() -> bool:
 	var lowest_entropy_tiles : Array[Tile] = get_lowest_entropy_tile_list()
 
 	# Exit if all cells have selected a tile type
-	if len(lowest_entropy_tiles) <= 1:
+	if len(lowest_entropy_tiles) == 0:
 		return true
 	
 	block_1_time += Time.get_ticks_usec() - start_1

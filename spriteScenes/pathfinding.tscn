@@ -1,12 +1,98 @@
-[gd_scene load_steps=5 format=3 uid="uid://bw45edttvkyqr"]
+[gd_scene load_steps=29 format=3 uid="uid://bw45edttvkyqr"]
 
 [ext_resource type="Script" path="res://spriteScenes/pathfinding.gd" id="1_sx1gb"]
 [ext_resource type="Texture2D" uid="uid://ic3mwoam0p5e" path="res://Resources/icon.svg" id="2_pelju"]
-[ext_resource type="Texture2D" uid="uid://csthmavorccln" path="res://tileset.png" id="3_difdu"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_1joo7"]
-atlas = ExtResource("3_difdu")
-region = Rect2(48, 512, 0, 64)
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_guoff"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_80ump"]
+atlas = SubResource("CompressedTexture2D_guoff")
+region = Rect2(0, 64, 16, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_kkmij"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rwe5q"]
+atlas = SubResource("CompressedTexture2D_kkmij")
+region = Rect2(16, 64, 16, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_syhyp"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_intk3"]
+atlas = SubResource("CompressedTexture2D_syhyp")
+region = Rect2(32, 64, 16, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_fccrr"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_miqfd"]
+atlas = SubResource("CompressedTexture2D_fccrr")
+region = Rect2(0, 80, 16, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_0pted"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o66rp"]
+atlas = SubResource("CompressedTexture2D_0pted")
+region = Rect2(16, 80, 16, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_ik2f3"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yxmg2"]
+atlas = SubResource("CompressedTexture2D_ik2f3")
+region = Rect2(32, 80, 16, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_0v330"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3r8tl"]
+atlas = SubResource("CompressedTexture2D_0v330")
+region = Rect2(0, 96, 16, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_rx7pg"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5ils7"]
+atlas = SubResource("CompressedTexture2D_rx7pg")
+region = Rect2(16, 96, 16, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_xal48"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gwmnj"]
+atlas = SubResource("CompressedTexture2D_xal48")
+region = Rect2(32, 96, 16, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_3o238"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tpvr8"]
+atlas = SubResource("CompressedTexture2D_3o238")
+region = Rect2(48, 64, 16, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_o0o43"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_toymd"]
+atlas = SubResource("CompressedTexture2D_o0o43")
+region = Rect2(64, 64, 16, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_majtb"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_t2djq"]
+atlas = SubResource("CompressedTexture2D_majtb")
+region = Rect2(48, 80, 16, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_ban61"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bneon"]
+atlas = SubResource("CompressedTexture2D_ban61")
+region = Rect2(64, 80, 16, 16)
 
 [node name="Node2D" type="Node2D"]
 position = Vector2(1, 0)
@@ -23,9 +109,57 @@ scale = Vector2(0.552808, 0.552808)
 texture = ExtResource("2_pelju")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-position = Vector2(-218, 521)
-texture = SubResource("AtlasTexture_1joo7")
+position = Vector2(-313, 200)
+scale = Vector2(0.998318, 1)
+texture = SubResource("AtlasTexture_80ump")
 
 [node name="Sprite2D2" type="Sprite2D" parent="."]
-position = Vector2(-218, 521)
-texture = SubResource("AtlasTexture_1joo7")
+position = Vector2(-681, 192)
+texture = SubResource("AtlasTexture_rwe5q")
+offset = Vector2(384, 8)
+
+[node name="Sprite2D3" type="Sprite2D" parent="."]
+position = Vector2(-281, 200)
+texture = SubResource("AtlasTexture_intk3")
+
+[node name="Sprite2D4" type="Sprite2D" parent="."]
+position = Vector2(-313.013, 216)
+scale = Vector2(0.998318, 1)
+texture = SubResource("AtlasTexture_miqfd")
+
+[node name="Sprite2D5" type="Sprite2D" parent="."]
+position = Vector2(-297.013, 216)
+texture = SubResource("AtlasTexture_o66rp")
+
+[node name="Sprite2D6" type="Sprite2D" parent="."]
+position = Vector2(-281, 216)
+texture = SubResource("AtlasTexture_yxmg2")
+
+[node name="Sprite2D7" type="Sprite2D" parent="."]
+position = Vector2(-313, 232)
+scale = Vector2(0.998318, 1)
+texture = SubResource("AtlasTexture_3r8tl")
+
+[node name="Sprite2D8" type="Sprite2D" parent="."]
+position = Vector2(-297, 232)
+texture = SubResource("AtlasTexture_5ils7")
+
+[node name="Sprite2D9" type="Sprite2D" parent="."]
+position = Vector2(-281, 232)
+texture = SubResource("AtlasTexture_gwmnj")
+
+[node name="Sprite2D10" type="Sprite2D" parent="."]
+position = Vector2(-257, 200)
+texture = SubResource("AtlasTexture_tpvr8")
+
+[node name="Sprite2D11" type="Sprite2D" parent="."]
+position = Vector2(-241, 200)
+texture = SubResource("AtlasTexture_toymd")
+
+[node name="Sprite2D12" type="Sprite2D" parent="."]
+position = Vector2(-257, 216)
+texture = SubResource("AtlasTexture_t2djq")
+
+[node name="Sprite2D13" type="Sprite2D" parent="."]
+position = Vector2(-241, 216)
+texture = SubResource("AtlasTexture_bneon")

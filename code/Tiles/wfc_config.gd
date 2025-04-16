@@ -147,18 +147,18 @@ const tile_edges : Dictionary = {
 	TileType.LAND_08 : [EdgeType.LAND, EdgeType.LAND, EdgeType.LAND, EdgeType.LAND],
 	TileType.LAND_09 : [EdgeType.LAND, EdgeType.LAND, EdgeType.LAND, EdgeType.LAND],
 	TileType.LAND_10 : [EdgeType.LAND, EdgeType.ROCK_N, EdgeType.ROCK_W, EdgeType.LAND],
-	TileType.LAND_11 : [EdgeType.LAND, EdgeType.ROCK_N, EdgeType.LAND, EdgeType.ROCK_N],
-	TileType.LAND_16 : [EdgeType.LAND, EdgeType.LAND, EdgeType.ROCK_E, EdgeType.ROCK_N],
-	TileType.LAND_13 : [EdgeType.ROCK_W, EdgeType.LAND, EdgeType.ROCK_W, EdgeType.LAND],
-	TileType.LAND_14 : [EdgeType.LAND, EdgeType.LAND, EdgeType.LAND, EdgeType.LAND],
-	TileType.LAND_15 : [EdgeType.ROCK_E, EdgeType.LAND, EdgeType.ROCK_E, EdgeType.LAND],
+	TileType.LAND_11 : [EdgeType.LAND, EdgeType.ROCK_N, EdgeType.ROCK_INNER, EdgeType.ROCK_N],
 	TileType.LAND_12 : [EdgeType.ROCK_W, EdgeType.ROCK_S, EdgeType.LAND, EdgeType.LAND],
-	TileType.LAND_17 : [EdgeType.LAND, EdgeType.ROCK_S, EdgeType.LAND, EdgeType.ROCK_S],
+	TileType.LAND_13 : [EdgeType.ROCK_W, EdgeType.ROCK_INNER, EdgeType.ROCK_W, EdgeType.LAND],
+	TileType.LAND_14 : [EdgeType.ROCK_INNER, EdgeType.ROCK_INNER, EdgeType.ROCK_INNER, EdgeType.ROCK_INNER],
+	TileType.LAND_15 : [EdgeType.ROCK_E, EdgeType.LAND, EdgeType.ROCK_E, EdgeType.ROCK_INNER],
+	TileType.LAND_16 : [EdgeType.LAND, EdgeType.LAND, EdgeType.ROCK_E, EdgeType.ROCK_N],
+	TileType.LAND_17 : [EdgeType.ROCK_INNER, EdgeType.ROCK_S, EdgeType.LAND, EdgeType.ROCK_S],
 	TileType.LAND_18 : [EdgeType.ROCK_E, EdgeType.LAND, EdgeType.LAND, EdgeType.ROCK_S],
-	TileType.LAND_19 : [EdgeType.ROCK_E, EdgeType.LAND, EdgeType.LAND, EdgeType.ROCK_S],
-	TileType.LAND_20 : [EdgeType.ROCK_W, EdgeType.ROCK_S, EdgeType.LAND, EdgeType.LAND],
-	TileType.LAND_21 : [EdgeType.LAND, EdgeType.LAND, EdgeType.ROCK_E, EdgeType.ROCK_N],
-	TileType.LAND_22 : [EdgeType.LAND, EdgeType.ROCK_N, EdgeType.ROCK_W, EdgeType.LAND],
+	TileType.LAND_19 : [EdgeType.ROCK_W, EdgeType.ROCK_INNER, EdgeType.ROCK_INNER, EdgeType.ROCK_N],
+	TileType.LAND_20 : [EdgeType.ROCK_E, EdgeType.ROCK_N, EdgeType.ROCK_INNER, EdgeType.ROCK_INNER],
+	TileType.LAND_21 : [EdgeType.ROCK_INNER, EdgeType.ROCK_INNER, EdgeType.ROCK_W, EdgeType.ROCK_S],
+	TileType.LAND_22 : [EdgeType.ROCK_INNER, EdgeType.ROCK_S, EdgeType.ROCK_E, EdgeType.ROCK_INNER],
 
 	TileType.WATER : [EdgeType.WATER, EdgeType.WATER, EdgeType.WATER, EdgeType.WATER],
 	TileType.WATER_NW : [EdgeType.LAND, EdgeType.LAND_WATER_N, EdgeType.LAND_WATER_W, EdgeType.LAND],
@@ -227,10 +227,10 @@ const tile_weights : Dictionary = {
 	TileType.LAND_16 : 5,
 	TileType.LAND_17 : 5,
 	TileType.LAND_18 : 5,
-	TileType.LAND_19 : 5,
-	TileType.LAND_20 : 5,
-	TileType.LAND_21 : 5,
-	TileType.LAND_22 : 5,
+	TileType.LAND_19 : 0,
+	TileType.LAND_20 : 0,
+	TileType.LAND_21 : 0,
+	TileType.LAND_22 : 0,
 
 	TileType.WATER : 100,
 	TileType.WATER_NW : 1,
@@ -454,10 +454,10 @@ const  cell_to_tile_options : Dictionary = {
 				TileType.LAND_16,
 				TileType.LAND_17,
 				TileType.LAND_18,
-				# TileType.LAND_19,
-				# TileType.LAND_20,
-				# TileType.LAND_21,
-				# TileType.LAND_22,
+				TileType.LAND_19,
+				TileType.LAND_20,
+				TileType.LAND_21,
+				TileType.LAND_22,
 	],
 }
 
@@ -472,14 +472,30 @@ func get_opposite_direction(direction : int) -> int:
 			return -1
 
 
+var overlay_chance : float = 0.35
+
 enum OverlayTiles {
-	TREE_1, 
-	TREE_2,
+	TREE_1 = 1,
+	TREE_2 = 2,
+	TREE_3 = 3,
+	TREE_4 = 4,
+	ROCK_1 = 6,
 }
 
 const overlay_vector : Dictionary = {
 	OverlayTiles.TREE_1 : Vector2(0,29),
 	OverlayTiles.TREE_2 : Vector2(0,30),
+	OverlayTiles.TREE_3 : Vector2(3,26),
+	OverlayTiles.TREE_4 : Vector2(3,27),
+	OverlayTiles.ROCK_1 : Vector2(1,26),
+}
+
+const overlay_weights : Dictionary = {
+	OverlayTiles.TREE_1 : 10,
+	OverlayTiles.TREE_2 : 10,
+	OverlayTiles.TREE_3 : 4,
+	OverlayTiles.TREE_4 : 4,
+	OverlayTiles.ROCK_1 : 2,
 }
 
 const valid_for_overlay : Array[int] = [
