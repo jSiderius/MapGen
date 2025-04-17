@@ -22,6 +22,7 @@ var district_manager_queue_update : bool = true
 
 ''' Dictionary mapping cell id's to the color they should be rendered in _draw() when relevant '''
 var colors_dict : Dictionary = {
+		Enums.Cell.CASTLE_WALL : Color.AQUAMARINE,
 		Enums.Cell.CITY_ROAD : Color.PURPLE,
 		Enums.Cell.DISTRICT_WALL : Color.BLACK, # District walls 
 		Enums.Cell.CITY_WALL : Color.BLACK, # City walls
@@ -158,9 +159,9 @@ func init_tile_manager() -> void:
 	# Redraw and WFC
 	await redraw_and_pause(-1, 2.0)
 
-	var start_time = Time.get_ticks_usec()
+	var time_start = Time.get_ticks_usec()
 	await tile_manager.wave_function_collapse_pq(false)
-	print("Runtime: ", (Time.get_ticks_usec() - start_time) / 1000000.0, " seconds")
+	print("Runtime: ", (Time.get_ticks_usec() - time_start) / 1000000.0, " seconds")
 
 func init_empty_graph(): 
 	graph = graph_loader.new()
@@ -359,15 +360,23 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 func add_major_roads():
 	init_empty_graph()
 
+	var bounding_box : Rect2 = district_manager.get_bounding_box()
+	var bb_min : Vector2 = bounding_box.position
+	var bb_max : Vector2 = bounding_box.size
+	visual_debug_cells.append(bb_min)
+	visual_debug_cells.append(bb_max)
+	print(bb_min, " ", bb_max)
+
+	
 	var percentage : float = height * 0.1
 	var road_start : Vector2i = select_road_position(Vector2i(0, 0), Vector2i(height, width), Enums.Border.EAST)
 	var road_end : Vector2i = select_road_position(Vector2i(max(road_start[0] - percentage, 0), 0), Vector2i(min(road_start[0] + percentage, height), width), Enums.Border.WEST)
 	
 	# TODO These are a little off when working on this again
-	visual_debug_cells.append(Vector2i(max(road_start[0] - percentage, 0), 0))
-	visual_debug_cells.append(Vector2i(max(road_start[0] - percentage, width), width-1))
-	visual_debug_cells.append(Vector2i(min(road_start[0] + percentage, height), 0))
-	visual_debug_cells.append(Vector2i(min(road_start[0] + percentage, height), width-1))
+	# visual_debug_cells.append(Vector2i(max(road_start[0] - percentage, 0), 0))
+	# visual_debug_cells.append(Vector2i(max(road_start[0] - percentage, width), width-1))
+	# visual_debug_cells.append(Vector2i(min(road_start[0] + percentage, height), 0))
+	# visual_debug_cells.append(Vector2i(min(road_start[0] + percentage, height), width-1))
 
 	update_district_manager()
 
@@ -878,8 +887,6 @@ func add_border_to_grid(render_all : bool = true) -> void:
 		
 		Return: void
 	'''
-	update_district_manager()
-
 	# Init the tracking set
 	var rendered_borders_set : Dictionary = {}
 	
@@ -904,7 +911,83 @@ func add_border_to_grid(render_all : bool = true) -> void:
 		# Record that this border has been rendered 
 		rendered_borders_set[d.id]= true
 	
+	await redraw_and_pause(-1, 0.0)
+	while true:
+		if not validate_border(Enums.Cell.CITY_ROAD): break
+		await redraw_and_pause(-1, 0.0)
+
 	district_manager_queue_update = true
+
+func add_castle_wall_to_grid(border_value : int = Enums.Cell.CITY_ROAD) -> void:
+	
+	for y in range(height): for x in range(width):
+		
+		if not index(y, x) == border_value: continue
+
+		for n in neighbors[Enums.NeighborsType.EIGHT_NEIGHBORS]:
+			var n_pos = Vector2i(y, x) + n
+			var n_val = index_vec(n_pos)
+
+			if district_manager.get_district(n_val) and district_manager.get_district(n_val).generic_district == Enums.Cell.DISTRICT_STAND_IN_CASTLE:
+				set_id(y, x, Enums.Cell.CASTLE_WALL)
+
+func validate_border(border_value : int = Enums.Cell.CITY_ROAD, n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> bool:
+	'''   
+		Purpose: 
+			Validates the border by ensuring every cell with value 'border_value' borders null space (2)
+			NOTE: Could be extended to district borders using null space arguments and small changes in logic
+			
+		Arguments: 
+			border_value: 
+				The ID value of border cells
+		
+		Return: void
+	'''
+
+	var update : bool = false
+
+	# Iterate the grid
+	for y in range(height): for x in range(width):
+		
+		# Only checking for cells with value 'border_value'
+		if index(y, x) != border_value: continue
+
+		# Loop to ensure the cell neighbors OUTSIDE_SPACE
+		var observed_neighbors : Dictionary = {}
+		for n in neighbors[n_type]: # Todo: no bounds check but fine ???
+			var n_pos : Vector2i = Vector2i(y, x) + n
+			var n_val : int = index_vec(n_pos)
+
+			if n_val in [border_value]: continue
+
+			observed_neighbors[n_val] = true
+		
+		var border_neighbors : int = 0
+		for n in neighbors[n_type]:
+			if index_vec(Vector2i(y, x) + n) == border_value: border_neighbors += 1
+
+		# If the cell should not be a border set it to an arbitrary value that will be overwritten
+		if len(observed_neighbors.keys()) < 2 or border_neighbors < 2:
+			set_id(y, x, -1001)
+			update = true
+
+			
+			
+	# Expand the grid to overwrite arbitrary values
+	expand_id_grid([Enums.Cell.OUTSIDE_SPACE, border_value, Enums.Cell.WATER, Enums.Cell.MAJOR_ROAD, Enums.Cell.CASTLE_WALL], [Enums.Cell.OUTSIDE_SPACE, Enums.Cell.WATER])
+
+	district_manager_queue_update = true
+
+	return update
+
+func add_generic_districts() -> void:
+	
+	update_district_manager()
+
+	for key in district_manager.get_district_keys():
+		if not is_district(key): continue
+		district_manager.get_district(key).generic_district = [Enums.Cell.DISTRICT_STAND_IN_1, Enums.Cell.DISTRICT_STAND_IN_2, Enums.Cell.DISTRICT_STAND_IN_3][randi() % 3]
+	district_manager.select_castle_district()
 
 func _draw() -> void:
 	''' Draws to screen based on the values class data ''' 

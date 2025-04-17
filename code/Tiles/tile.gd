@@ -11,8 +11,8 @@ var overlay : int
 # TODO: x, y necessary ? 
 func _init(_cell_id : int) -> void:
 	cell_id = _cell_id 
-	if is_district(cell_id): 
-		cell_id = Enums.Cell.DISTRICT_STAND_IN
+	# if is_district(cell_id): 
+		# cell_id = [Enums.Cell.DISTRICT_STAND_IN_1, Enums.Cell.DISTRICT_STAND_IN_2][randi() % 2]
 
 	# possibilities = wfcConfig.tile_edges.keys()
 	if cell_id in wfcConfig.cell_to_tile_options: 
@@ -29,12 +29,57 @@ func add_neighbor(direction, tile : Tile) -> void:
 	tile_neighbors[direction] = tile
 
 func add_overlay() -> void:
-	var overlays = wfcConfig.OverlayTiles.values()
-	var weights : Array[float] = []
-	for o in overlays:
-		weights.append(wfcConfig.overlay_weights[o])
+	if cell_id not in wfcConfig.overlay_by_cell: return
 
-	overlay = overlays[weighted_random_index(weights)]
+	var dirs : Array = []
+	for direction in tile_neighbors.keys():
+		if tile_neighbors[direction].cell_id == Enums.Cell.CITY_ROAD: 
+			dirs.append(direction)
+
+	
+	if len(dirs) > 0:
+		road_adj_overlay(dirs)
+	else: 
+		default_overlay()
+
+
+func road_adj_overlay(dirs : Array):
+	dirs.append(wfcConfig.Dir.ANY)
+
+	if cell_id not in wfcConfig.road_overlay_chance or randf() > wfcConfig.road_overlay_chance[cell_id]:
+		return
+
+	var overlays = wfcConfig.overlay_by_cell[cell_id].duplicate()
+	
+	var weights : Array[float] = []
+	for i in range(len(overlays) - 1, -1, -1):
+		if not overlays[i][2] or overlays[i][4] not in dirs: overlays.remove_at(i)
+	for i in range(len(overlays)):
+		weights.append(overlays[i][1])
+	
+	if len(overlays) == 0: return
+
+	overlay = overlays[weighted_random_index(weights)][0]
+	
+
+
+func default_overlay():
+	if cell_id not in wfcConfig.overlay_chance or randf() > wfcConfig.overlay_chance[cell_id]:
+		return
+
+	var overlays = wfcConfig.overlay_by_cell[cell_id].duplicate()
+	
+	var weights : Array[float] = []
+	for i in range(len(overlays) - 1, -1, -1):
+		if not overlays[i][3]: 
+			overlays.remove_at(i)
+	for i in range(len(overlays)):
+		weights.append(overlays[i][1])
+	
+	if len(overlays) == 0: return
+
+	overlay = overlays[weighted_random_index(weights)][0]
+
 
 func get_neighbor(direction) -> Tile:
 	return tile_neighbors[direction]
@@ -62,8 +107,11 @@ func collapse():
 	# possibilities = [possibilities[randi() % len(possibilities)]]
 	entropy = 0
 
-	if possibilities[0] in wfcConfig.valid_for_overlay and randf() <= wfcConfig.overlay_chance:
+	if possibilities[0] in wfcConfig.valid_for_overlay:
 		add_overlay()
+
+func breaks_neighbor():
+	pass
 
 func get_tile_type():
 	if len(possibilities) == 0:
@@ -71,7 +119,7 @@ func get_tile_type():
 	
 	return possibilities[0]
 
-func constrain(neighbor_possibilities, direction): 
+func constrain(neighbor_possibilities, direction, recursive = false): 
 	var reduced : bool = false
 	
 	if entropy <= 0: return reduced
@@ -85,20 +133,41 @@ func constrain(neighbor_possibilities, direction):
 	var opposite = wfcConfig.get_opposite_direction(direction)
 	
 	
+	if recursive: print("Pos ", possibilities)
 	# Remove a possibility if it's edge is not reciprocated by any possible connection in the neighboring tile	
-	for i in range(possibilities.size() - 1, -1, -1): 
+	for i in range(possibilities.size() - 1, -1, -1):
+		if recursive: print("Pos[i] ", possibilities[i])
 		if wfcConfig.tile_edges[possibilities[i]][opposite] not in connecting_edges_set: 
 			possibilities.remove_at(i)
 			reduced = true
 	
 			
-	if len(possibilities) == 0: 
-		possibilities = [wfcConfig.TileType.TILE_ERROR]
-		print_debug("REMOVAL FAILURE: Neighbor Possibilities: ", neighbor_possibilities)
+	if len(possibilities) == 0 and not recursive:
+		removal_failure()
 
 	entropy = len(possibilities) if len(possibilities) > 1 else 0
 
 	return reduced
+
+func removal_failure():
+	print_debug("Correcting failure")
+	possibilities = wfcConfig.TileType.values().duplicate()
+	possibilities.erase(wfcConfig.TileType.TILE_ERROR)
+	possibilities.erase(wfcConfig.TileType.CASTLE_TOWER_01)
+
+	for dir in tile_neighbors.keys():
+		print(tile_neighbors[dir].possibilities)
+		constrain(tile_neighbors[wfcConfig.get_opposite_direction(dir)].possibilities, dir, true)
+	
+	if len(possibilities) == 0 or possibilities == [wfcConfig.TileType.TILE_ERROR]:
+		possibilities = [wfcConfig.TileType.TILE_ERROR]
+		print_debug("REMOVAL FAILURE: ", cell_id)
+	else:
+		for i in range(len(possibilities)):
+			if possibilities[i] == wfcConfig.TileType.TILE_ERROR:
+				possibilities.remove_at(i)
+				break
+
 
 func weighted_random_index(weights : Array[float]) -> int:
 	

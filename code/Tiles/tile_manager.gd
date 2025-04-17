@@ -52,6 +52,8 @@ func generate_tile_grid(id_grid : Grid) -> void:
 		for x in range(width):
 			var cell_id : int = id_grid.index(y,x)
 			if Vector2i(y, x) in water_border: cell_id = Enums.Cell.WATER_BORDER # Override cell_id with WATER_BORDER for WFC
+			if id_grid.district_manager.has_district(cell_id) and id_grid.district_manager.get_district(cell_id).generic_district: 
+				cell_id = id_grid.district_manager.get_district(cell_id).generic_district
 			tile_grid[y].append(Tile.new(cell_id))
 	
 	for y in range(height): for x in range(width): 

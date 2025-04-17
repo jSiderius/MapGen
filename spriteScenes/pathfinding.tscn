@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://bw45edttvkyqr"]
+[gd_scene load_steps=33 format=3 uid="uid://bw45edttvkyqr"]
 
 [ext_resource type="Script" path="res://spriteScenes/pathfinding.gd" id="1_sx1gb"]
 [ext_resource type="Texture2D" uid="uid://ic3mwoam0p5e" path="res://Resources/icon.svg" id="2_pelju"]
@@ -15,7 +15,7 @@ load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_rwe5q"]
 atlas = SubResource("CompressedTexture2D_kkmij")
-region = Rect2(16, 64, 16, 16)
+region = Rect2(256, 544, 16, 16)
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_syhyp"]
 load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
@@ -57,7 +57,21 @@ load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_5ils7"]
 atlas = SubResource("CompressedTexture2D_rx7pg")
-region = Rect2(16, 96, 16, 16)
+region = Rect2(288, 416, 16, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_ntiao"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_80pxg"]
+atlas = SubResource("CompressedTexture2D_ntiao")
+region = Rect2(240, 416, 16, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_ywwmy"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cfjss"]
+atlas = SubResource("CompressedTexture2D_ywwmy")
+region = Rect2(288, 416, 48, 48)
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_xal48"]
 load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
@@ -109,34 +123,34 @@ scale = Vector2(0.552808, 0.552808)
 texture = ExtResource("2_pelju")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-position = Vector2(-313, 200)
+position = Vector2(-313, 168)
 scale = Vector2(0.998318, 1)
 texture = SubResource("AtlasTexture_80ump")
 
-[node name="Sprite2D2" type="Sprite2D" parent="."]
-position = Vector2(-681, 192)
+[node name="Sprite2D14" type="Sprite2D" parent="."]
+rotation = -0.0487006
 texture = SubResource("AtlasTexture_rwe5q")
 offset = Vector2(384, 8)
 
 [node name="Sprite2D3" type="Sprite2D" parent="."]
-position = Vector2(-281, 200)
+position = Vector2(-281, 168)
 texture = SubResource("AtlasTexture_intk3")
 
 [node name="Sprite2D4" type="Sprite2D" parent="."]
-position = Vector2(-313.013, 216)
+position = Vector2(-313, 184)
 scale = Vector2(0.998318, 1)
 texture = SubResource("AtlasTexture_miqfd")
 
 [node name="Sprite2D5" type="Sprite2D" parent="."]
-position = Vector2(-297.013, 216)
+position = Vector2(-297, 184)
 texture = SubResource("AtlasTexture_o66rp")
 
 [node name="Sprite2D6" type="Sprite2D" parent="."]
-position = Vector2(-281, 216)
+position = Vector2(-281, 184)
 texture = SubResource("AtlasTexture_yxmg2")
 
 [node name="Sprite2D7" type="Sprite2D" parent="."]
-position = Vector2(-313, 232)
+position = Vector2(-313, 200)
 scale = Vector2(0.998318, 1)
 texture = SubResource("AtlasTexture_3r8tl")
 
@@ -144,22 +158,34 @@ texture = SubResource("AtlasTexture_3r8tl")
 position = Vector2(-297, 232)
 texture = SubResource("AtlasTexture_5ils7")
 
-[node name="Sprite2D9" type="Sprite2D" parent="."]
+[node name="Sprite2D15" type="Sprite2D" parent="."]
 position = Vector2(-281, 232)
+texture = SubResource("AtlasTexture_80pxg")
+
+[node name="Sprite2D16" type="Sprite2D" parent="."]
+position = Vector2(-249, 232)
+texture = SubResource("AtlasTexture_80pxg")
+
+[node name="Sprite2D17" type="Sprite2D" parent="."]
+position = Vector2(-265, 232)
+texture = SubResource("AtlasTexture_cfjss")
+
+[node name="Sprite2D9" type="Sprite2D" parent="."]
+position = Vector2(-281, 200)
 texture = SubResource("AtlasTexture_gwmnj")
 
 [node name="Sprite2D10" type="Sprite2D" parent="."]
-position = Vector2(-257, 200)
+position = Vector2(-257, 168)
 texture = SubResource("AtlasTexture_tpvr8")
 
 [node name="Sprite2D11" type="Sprite2D" parent="."]
-position = Vector2(-241, 200)
+position = Vector2(-241, 168)
 texture = SubResource("AtlasTexture_toymd")
 
 [node name="Sprite2D12" type="Sprite2D" parent="."]
-position = Vector2(-257, 216)
+position = Vector2(-257, 184)
 texture = SubResource("AtlasTexture_t2djq")
 
 [node name="Sprite2D13" type="Sprite2D" parent="."]
-position = Vector2(-241, 216)
+position = Vector2(-241, 184)
 texture = SubResource("AtlasTexture_bneon")

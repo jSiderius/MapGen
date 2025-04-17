@@ -65,7 +65,6 @@ func _ready() -> void:
 	var voronoi_id_grid : Grid = grid_loader.new(id_grid.width, id_grid.height, square_size, Enums.GridInitType.VORONOI, {})
 	var edge_cell_ids = voronoi_id_grid.find_unique_edge_cell_ids()
 	voronoi_id_grid.overwrite_cells_by_id(edge_cell_ids, Enums.Cell.OUTSIDE_SPACE)
-	print(voronoi_id_grid.id_grid)
 	id_grid.copy_designated_ids(voronoi_id_grid, [Enums.Cell.OUTSIDE_SPACE], [Enums.Cell.WATER, Enums.Cell.MAJOR_ROAD])
 	if debug: await redraw_and_pause(10, 0.2)
 	
@@ -99,16 +98,15 @@ func _ready() -> void:
 	id_grid.expand_id_grid([Enums.Cell.OUTSIDE_SPACE, Enums.Cell.MAJOR_ROAD, Enums.Cell.WATER], [])
 	if debug: await redraw_and_pause(17, 0.2)
 
-	# # Increase the array resolution and add a new (thinner) border
-	# id_grid.increase_array_resolution(4.0) # TODO: Just draw the walls smaller
 	# id_grid.add_city_border(Enums.Cell.DISTRICT_WALL) 
 	if debug: await redraw_and_pause(19, 0.2)
 
 	# id_grid.toggle_border_rendering(true)
-	id_grid.add_border_to_grid(true)
+	await id_grid.add_border_to_grid(true)
 	if debug: await redraw_and_pause(20, 0.2)
-	# return
 
+	id_grid.add_generic_districts()
+	id_grid.add_castle_wall_to_grid()
 	id_grid.init_tile_manager()
 	if debug: await redraw_and_pause(20, 0.2)
 

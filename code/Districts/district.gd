@@ -15,6 +15,8 @@ var render_border : bool = false
 var distance_to_grid_center : float
 var bounding_box : Rect2
 
+var generic_district : int
+
 func _init(_id : int): 
 	id = _id
 

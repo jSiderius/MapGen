@@ -7,13 +7,12 @@ enum Dir {
 	EAST  = 1,
 	SOUTH = 2,
 	WEST  = 3,
+	ANY = 4,
 }
 
 ## Tile Types
 enum TileType{
 	TILE_ERROR = -1,
-	TILE_DISTRICT,
-	TILE_LAND,
 	
 	LAND_01,
 	LAND_02,
@@ -80,6 +79,10 @@ enum TileType{
 	WATER_14,
 	WATER_15,
 
+	CASTLE_WALL_01, 
+	CASTLE_WALL_02,
+	CASTLE_TOWER_01,
+
 }
 
 enum EdgeType {
@@ -87,6 +90,7 @@ enum EdgeType {
 	WATER,
 	LAND,
 	ERROR,
+	ALL,
 
 	LAND_WATER_N,
 	LAND_WATER_E,
@@ -103,39 +107,51 @@ enum EdgeType {
 	ROAD,
 	ROAD_ADJ_LAND,
 	ROAD_END_LAND,
+
+	CASTLE_TOWER,
+	CASTLE_WALL,
+
 }
 
+var edge_rules: Dictionary = build_edge_rules()
 
-## Dictionary of all tile types and tile edges, on the directions [North, East, South, West]
-const edge_rules : Dictionary = {
-	EdgeType.DISTRICT : [EdgeType.DISTRICT, EdgeType.LAND, EdgeType.ERROR],
-	EdgeType.WATER : [EdgeType.WATER, EdgeType.ERROR],
-	EdgeType.LAND : [EdgeType.LAND, EdgeType.ROAD_ADJ_LAND, EdgeType.ROAD_END_LAND, EdgeType.DISTRICT, EdgeType.ERROR],
+func build_edge_rules() -> Dictionary:
+	var all = [EdgeType.ERROR, EdgeType.ALL, EdgeType.CASTLE_TOWER]
 
-	EdgeType.LAND_WATER_N : [EdgeType.LAND_WATER_N, EdgeType.ERROR],
-	EdgeType.LAND_WATER_E : [EdgeType.LAND_WATER_E, EdgeType.ERROR],
-	EdgeType.LAND_WATER_S : [EdgeType.LAND_WATER_S, EdgeType.ERROR],
-	EdgeType.LAND_WATER_W : [EdgeType.LAND_WATER_W, EdgeType.ERROR],
-	EdgeType.LAND_WATER_2 : [EdgeType.LAND_WATER_2, EdgeType.ERROR],
+	var rules = {
+		EdgeType.DISTRICT : [EdgeType.DISTRICT, EdgeType.LAND],
+		EdgeType.WATER : [EdgeType.WATER],
+		EdgeType.LAND : [EdgeType.LAND, EdgeType.ROAD_ADJ_LAND, EdgeType.ROAD_END_LAND, EdgeType.DISTRICT],
 
-	EdgeType.ROCK_N : [EdgeType.ROCK_N, EdgeType.ERROR],
-	EdgeType.ROCK_E : [EdgeType.ROCK_E, EdgeType.ERROR],
-	EdgeType.ROCK_S : [EdgeType.ROCK_S, EdgeType.ERROR],
-	EdgeType.ROCK_W : [EdgeType.ROCK_W, EdgeType.ERROR],
-	EdgeType.ROCK_INNER : [EdgeType.ROCK_INNER, EdgeType.ERROR],
+		EdgeType.LAND_WATER_N : [EdgeType.LAND_WATER_N],
+		EdgeType.LAND_WATER_E : [EdgeType.LAND_WATER_E],
+		EdgeType.LAND_WATER_S : [EdgeType.LAND_WATER_S],
+		EdgeType.LAND_WATER_W : [EdgeType.LAND_WATER_W],
+		EdgeType.LAND_WATER_2 : [EdgeType.LAND_WATER_2],
 
-	EdgeType.ROAD : [EdgeType.ROAD, EdgeType.ERROR],
-	EdgeType.ROAD_ADJ_LAND : [EdgeType.ROAD_ADJ_LAND, EdgeType.LAND, EdgeType.ERROR],
-	EdgeType.ROAD_END_LAND : [EdgeType.ROAD_END_LAND, EdgeType.LAND, EdgeType.ERROR],
+		EdgeType.ROCK_N : [EdgeType.ROCK_N],
+		EdgeType.ROCK_E : [EdgeType.ROCK_E],
+		EdgeType.ROCK_S : [EdgeType.ROCK_S],
+		EdgeType.ROCK_W : [EdgeType.ROCK_W],
+		EdgeType.ROCK_INNER : [EdgeType.ROCK_INNER],
 
-	EdgeType.ERROR : [EdgeType.DISTRICT, EdgeType.WATER, EdgeType.LAND, EdgeType.ERROR, EdgeType.LAND_WATER_N, EdgeType.LAND_WATER_E, EdgeType.LAND_WATER_S, EdgeType.LAND_WATER_W]
-}
+		EdgeType.ROAD : [EdgeType.ROAD],
+		EdgeType.ROAD_ADJ_LAND : [EdgeType.ROAD_ADJ_LAND, EdgeType.LAND],
+		EdgeType.ROAD_END_LAND : [EdgeType.ROAD_END_LAND, EdgeType.LAND],
+
+		EdgeType.CASTLE_WALL : [EdgeType.CASTLE_WALL, EdgeType.CASTLE_TOWER],
+	}
+
+	for edge in all:
+		rules[edge] = rules.keys()
+		for key in rules.keys():
+			rules[key].append(edge)
+
+	return rules
 
 # [N, E, S, W]
 const tile_edges : Dictionary = {
 	TileType.TILE_ERROR : [EdgeType.ERROR, EdgeType.ERROR, EdgeType.ERROR, EdgeType.ERROR],
-	TileType.TILE_DISTRICT : [EdgeType.DISTRICT, EdgeType.DISTRICT, EdgeType.DISTRICT, EdgeType.DISTRICT],
-	TileType.TILE_LAND : [EdgeType.LAND, EdgeType.LAND, EdgeType.LAND, EdgeType.LAND],
 
 	TileType.LAND_01 : [EdgeType.LAND, EdgeType.LAND, EdgeType.LAND, EdgeType.LAND],
 	TileType.LAND_02 : [EdgeType.LAND, EdgeType.LAND, EdgeType.LAND, EdgeType.LAND],
@@ -202,12 +218,14 @@ const tile_edges : Dictionary = {
 	TileType.ROAD_13 : [EdgeType.ROAD_END_LAND, EdgeType.ROAD, EdgeType.ROAD_END_LAND, EdgeType.ROAD_END_LAND],
 	TileType.ROAD_14 : [EdgeType.ROAD_ADJ_LAND, EdgeType.ROAD, EdgeType.ROAD_ADJ_LAND, EdgeType.ROAD],
 	TileType.ROAD_15 : [EdgeType.ROAD_END_LAND, EdgeType.ROAD_END_LAND, EdgeType.ROAD_END_LAND, EdgeType.ROAD],
+
+	TileType.CASTLE_WALL_01 :  [EdgeType.CASTLE_WALL, EdgeType.LAND, EdgeType.CASTLE_WALL, EdgeType.LAND],
+	TileType.CASTLE_WALL_02 : [EdgeType.LAND, EdgeType.CASTLE_WALL, EdgeType.LAND, EdgeType.CASTLE_WALL],
+	TileType.CASTLE_TOWER_01 : [EdgeType.CASTLE_TOWER, EdgeType.CASTLE_TOWER, EdgeType.CASTLE_TOWER, EdgeType.CASTLE_TOWER],
 }
 
 const tile_weights : Dictionary = {
 	TileType.TILE_ERROR : 0,
-	TileType.TILE_DISTRICT : 10,
-	TileType.TILE_LAND : 100,
 	
 	TileType.LAND_01 : 60,
 	TileType.LAND_02 : 10,
@@ -232,14 +250,14 @@ const tile_weights : Dictionary = {
 	TileType.LAND_21 : 0,
 	TileType.LAND_22 : 0,
 
-	TileType.WATER : 100,
-	TileType.WATER_NW : 1,
+	TileType.WATER : 1000000,
+	TileType.WATER_NW : 0.00001,
 	TileType.WATER_W : 1,
-	TileType.WATER_SW : 1,
+	TileType.WATER_SW : 0.00001,
 	TileType.WATER_S : 1,
-	TileType.WATER_SE : 1,
+	TileType.WATER_SE : 0.00001,
 	TileType.WATER_E : 1,
-	TileType.WATER_NE : 1,
+	TileType.WATER_NE : 0.00001,
 	TileType.WATER_N : 1,
 
 	TileType.WATER_01 : 1,
@@ -274,15 +292,16 @@ const tile_weights : Dictionary = {
 	TileType.ROAD_12 : 1,
 	TileType.ROAD_13 : 0,
 	TileType.ROAD_14 : 1,
-	TileType.ROAD_15 : 0.
+	TileType.ROAD_15 : 0,
+
+	TileType.CASTLE_WALL_01 : 1, 
+	TileType.CASTLE_WALL_02 : 1,
+	TileType.CASTLE_TOWER_01 : 0,
+
 }
 
 const  tile_vector : Dictionary = {
 	TileType.TILE_ERROR : Vector2(22, 4),
-
-	TileType.TILE_DISTRICT : Vector2(22, 4),
-	# TileType.TILE_WATER : Vector2(21, 5),
-	TileType.TILE_LAND : Vector2(21, 4),
 
 	TileType.LAND_01 : Vector2(0, 0),
 	TileType.LAND_02 : Vector2(0, 1),
@@ -350,12 +369,28 @@ const  tile_vector : Dictionary = {
 	TileType.ROAD_13 : Vector2(16, 3),
 	TileType.ROAD_14 : Vector2(17, 3),
 	TileType.ROAD_15 : Vector2(18, 3),
+
+	TileType.CASTLE_WALL_01 : Vector2(18,27),
+	TileType.CASTLE_WALL_02 : Vector2(19, 26),
+	TileType.CASTLE_TOWER_01 : Vector2(18,26),
 }
 
 const priority_options = [TileType.WATER, TileType.WATER_15]
 
+# TODO: Update for unique weights
 const  cell_to_tile_options : Dictionary = {
-	Enums.Cell.DISTRICT_STAND_IN : [TileType.LAND_01],
+	Enums.Cell.DISTRICT_STAND_IN : [
+		TileType.LAND_01,
+		TileType.LAND_02,
+		TileType.LAND_03,
+		TileType.LAND_04,
+		# TileType.LAND_05,
+		# TileType.LAND_06,
+		# TileType.LAND_07,
+		# TileType.LAND_08,
+		# TileType.LAND_09,
+	],
+
 	Enums.Cell.WATER_BORDER : 
 		[
 					TileType.WATER_NW, 
@@ -459,6 +494,12 @@ const  cell_to_tile_options : Dictionary = {
 				TileType.LAND_21,
 				TileType.LAND_22,
 	],
+
+	Enums.Cell.CASTLE_WALL : [
+		TileType.CASTLE_WALL_01,
+		TileType.CASTLE_WALL_02,
+		TileType.CASTLE_TOWER_01,
+	]
 }
 
 func get_opposite_direction(direction : int) -> int:
@@ -472,7 +513,23 @@ func get_opposite_direction(direction : int) -> int:
 			return -1
 
 
-var overlay_chance : float = 0.35
+var overlay_chance : Dictionary = {
+	Enums.Cell.DISTRICT_STAND_IN : 0.2,
+	Enums.Cell.DISTRICT_STAND_IN_1 : 0.2,
+	Enums.Cell.DISTRICT_STAND_IN_2 : 0.2,
+	Enums.Cell.DISTRICT_STAND_IN_3 : 0.2,
+	Enums.Cell.DISTRICT_STAND_IN_CASTLE : 0.6,
+	Enums.Cell.OUTSIDE_SPACE : 0.25,
+}
+
+var road_overlay_chance : Dictionary = {
+	Enums.Cell.DISTRICT_STAND_IN : 0.65,
+	Enums.Cell.DISTRICT_STAND_IN_1 : 0.65,
+	Enums.Cell.DISTRICT_STAND_IN_2 : 0.65,
+	Enums.Cell.DISTRICT_STAND_IN_3 : 0.65,
+	Enums.Cell.DISTRICT_STAND_IN_CASTLE : 0.65,
+	Enums.Cell.OUTSIDE_SPACE : 0.25,
+}
 
 enum OverlayTiles {
 	TREE_1 = 1,
@@ -480,6 +537,87 @@ enum OverlayTiles {
 	TREE_3 = 3,
 	TREE_4 = 4,
 	ROCK_1 = 6,
+	FRUIT_TREE_01,
+	FRUIT_TREE_02,
+
+	# Red houses
+	WELL_01,
+	TENT_01,
+	HOUSE_01,
+	HOUSE_02,
+	HOUSE_03,
+	HOUSE_04,
+	HOUSE_05,
+	HOUSE_06,
+	HOUSE_07,
+	HOUSE_08,
+	HOUSE_09,
+	HOUSE_10,
+	HOUSE_11,
+	HOUSE_12,
+	HOUSE_13,
+	HOUSE_14,
+	HOUSE_15,
+	HOUSE_16,
+	HOUSE_17,
+	HOUSE_18,
+	HOUSE_19,
+	HOUSE_20,
+	HOUSE_21,
+	HOUSE_22,
+
+	# Green houses
+	G_WELL_01,
+	G_TENT_01,
+	G_HOUSE_01,
+	G_HOUSE_02,
+	G_HOUSE_03,
+	G_HOUSE_04,
+	G_HOUSE_05,
+	G_HOUSE_06,
+	G_HOUSE_07,
+	G_HOUSE_08,
+	G_HOUSE_09,
+	G_HOUSE_10,
+	G_HOUSE_11,
+	G_HOUSE_12,
+	G_HOUSE_13,
+	G_HOUSE_14,
+	G_HOUSE_15,
+	G_HOUSE_16,
+	G_HOUSE_17,
+	G_HOUSE_18,
+	G_HOUSE_19,
+	G_HOUSE_20,
+	G_HOUSE_21,
+	G_HOUSE_22,
+
+	# Brown houses
+	B_WELL_01,
+	B_TENT_01,
+	B_HOUSE_01,
+	B_HOUSE_02,
+	B_HOUSE_03,
+	B_HOUSE_04,
+	B_HOUSE_05,
+	B_HOUSE_06,
+	B_HOUSE_07,
+	B_HOUSE_08,
+	B_HOUSE_09,
+	B_HOUSE_10,
+	B_HOUSE_11,
+	B_HOUSE_12,
+	B_HOUSE_13,
+	B_HOUSE_14,
+	B_HOUSE_15,
+	B_HOUSE_16,
+	B_HOUSE_17,
+	B_HOUSE_18,
+	B_HOUSE_19,
+	B_HOUSE_20,
+	B_HOUSE_21,
+	B_HOUSE_22,
+	
 }
 
 const overlay_vector : Dictionary = {
@@ -487,15 +625,171 @@ const overlay_vector : Dictionary = {
 	OverlayTiles.TREE_2 : Vector2(0,30),
 	OverlayTiles.TREE_3 : Vector2(3,26),
 	OverlayTiles.TREE_4 : Vector2(3,27),
+	OverlayTiles.FRUIT_TREE_01 : Vector2(2, 26),
+	OverlayTiles.FRUIT_TREE_02 : Vector2(2, 27),
+	OverlayTiles.WELL_01 : Vector2(15, 37),
 	OverlayTiles.ROCK_1 : Vector2(1,26),
+
+	OverlayTiles.TENT_01 : Vector2(4, 33),
+	OverlayTiles.HOUSE_01 : Vector2(15, 33),
+	OverlayTiles.HOUSE_02 : Vector2(17, 33),
+	OverlayTiles.HOUSE_03 : Vector2(18, 33),
+	OverlayTiles.HOUSE_04 : Vector2(19, 33),
+	OverlayTiles.HOUSE_05 : Vector2(14, 34),
+	OverlayTiles.HOUSE_06 : Vector2(15, 34),
+	OverlayTiles.HOUSE_07 : Vector2(16, 34),
+	OverlayTiles.HOUSE_08 : Vector2(17, 34),
+	OverlayTiles.HOUSE_09 : Vector2(18, 34),
+	OverlayTiles.HOUSE_10 : Vector2(19, 34),
+	OverlayTiles.HOUSE_11 : Vector2(14, 35),
+	OverlayTiles.HOUSE_12 : Vector2(15, 35),
+	OverlayTiles.HOUSE_13 : Vector2(16, 35),
+	OverlayTiles.HOUSE_14 : Vector2(17, 35),
+	OverlayTiles.HOUSE_15 : Vector2(18, 35),
+	OverlayTiles.HOUSE_16 : Vector2(19, 35),
+	OverlayTiles.HOUSE_17 : Vector2(14, 36),
+	OverlayTiles.HOUSE_18 : Vector2(15, 36),
+	OverlayTiles.HOUSE_19 : Vector2(16, 36),
+	OverlayTiles.HOUSE_20 : Vector2(17, 36),
+	OverlayTiles.HOUSE_21 : Vector2(18, 36),
+	OverlayTiles.HOUSE_22 : Vector2(19, 36),
+
+	OverlayTiles.G_WELL_01 : Vector2(5, 37),
+	OverlayTiles.G_TENT_01 : Vector2(4, 33),
+	OverlayTiles.G_HOUSE_01 : Vector2(5, 33),
+	OverlayTiles.G_HOUSE_02 : Vector2(7, 33),
+	OverlayTiles.G_HOUSE_03 : Vector2(8, 33),
+	OverlayTiles.G_HOUSE_04 : Vector2(9, 33),
+	OverlayTiles.G_HOUSE_05 : Vector2(4, 34),
+	OverlayTiles.G_HOUSE_06 : Vector2(5, 34),
+	OverlayTiles.G_HOUSE_07 : Vector2(6, 34),
+	OverlayTiles.G_HOUSE_08 : Vector2(7, 34),
+	OverlayTiles.G_HOUSE_09 : Vector2(8, 34),
+	OverlayTiles.G_HOUSE_10 : Vector2(9, 34),
+	OverlayTiles.G_HOUSE_11 : Vector2(4, 35),
+	OverlayTiles.G_HOUSE_12 : Vector2(5, 35),
+	OverlayTiles.G_HOUSE_13 : Vector2(6, 35),
+	OverlayTiles.G_HOUSE_14 : Vector2(7, 35),
+	OverlayTiles.G_HOUSE_15 : Vector2(8, 35),
+	OverlayTiles.G_HOUSE_16 : Vector2(9, 35),
+	OverlayTiles.G_HOUSE_17 : Vector2(4, 36),
+	OverlayTiles.G_HOUSE_18 : Vector2(5, 36),
+	OverlayTiles.G_HOUSE_19 : Vector2(6, 36),
+	OverlayTiles.G_HOUSE_20 : Vector2(7, 36),
+	OverlayTiles.G_HOUSE_21 : Vector2(8, 36),
+	OverlayTiles.G_HOUSE_22 : Vector2(9, 36),
+
+	OverlayTiles.B_WELL_01 : Vector2(5, 30),
+	OverlayTiles.B_TENT_01 : Vector2(4, 26),
+	OverlayTiles.B_HOUSE_01 : Vector2(5, 26),
+	OverlayTiles.B_HOUSE_02 : Vector2(7, 26),
+	OverlayTiles.B_HOUSE_03 : Vector2(8, 26),
+	OverlayTiles.B_HOUSE_04 : Vector2(9, 26),
+	OverlayTiles.B_HOUSE_05 : Vector2(4, 27),
+	OverlayTiles.B_HOUSE_06 : Vector2(5, 27),
+	OverlayTiles.B_HOUSE_07 : Vector2(6, 27),
+	OverlayTiles.B_HOUSE_08 : Vector2(7, 27),
+	OverlayTiles.B_HOUSE_09 : Vector2(8, 27),
+	OverlayTiles.B_HOUSE_10 : Vector2(9, 27),
+	OverlayTiles.B_HOUSE_11 : Vector2(4, 28),
+	OverlayTiles.B_HOUSE_12 : Vector2(5, 28),
+	OverlayTiles.B_HOUSE_13 : Vector2(6, 28),
+	OverlayTiles.B_HOUSE_14 : Vector2(7, 28),
+	OverlayTiles.B_HOUSE_15 : Vector2(8, 28),
+	OverlayTiles.B_HOUSE_16 : Vector2(9, 28),
+	OverlayTiles.B_HOUSE_17 : Vector2(4, 29),
+	OverlayTiles.B_HOUSE_18 : Vector2(5, 29),
+	OverlayTiles.B_HOUSE_19 : Vector2(6, 29),
+	OverlayTiles.B_HOUSE_20 : Vector2(7, 29),
+	OverlayTiles.B_HOUSE_21 : Vector2(8, 29),
+	OverlayTiles.B_HOUSE_22 : Vector2(9, 29),
 }
 
-const overlay_weights : Dictionary = {
-	OverlayTiles.TREE_1 : 10,
-	OverlayTiles.TREE_2 : 10,
-	OverlayTiles.TREE_3 : 4,
-	OverlayTiles.TREE_4 : 4,
-	OverlayTiles.ROCK_1 : 2,
+const overlay_by_cell : Dictionary = {
+	# [OverlayTile, Selection Weight, Can be road adjacent, Can be non-road adjacent, direction facing]
+	Enums.Cell.DISTRICT_STAND_IN_1 : [
+								# [OverlayTiles.HOUSE_01, 1, true, false, Dir.SOUTH],
+								[OverlayTiles.HOUSE_02, 1, true, false, Dir.SOUTH],
+								[OverlayTiles.HOUSE_03, 1, true, false, Dir.SOUTH],
+								[OverlayTiles.HOUSE_04, 1, true, false, Dir.SOUTH],
+								[OverlayTiles.HOUSE_05, 1, true, false, Dir.EAST],
+								[OverlayTiles.HOUSE_05, 1, true, false, Dir.WEST],
+								[OverlayTiles.HOUSE_06, 1, true, false, Dir.EAST],
+								[OverlayTiles.HOUSE_06, 1, true, false, Dir.WEST],
+								[OverlayTiles.HOUSE_14, 1, true, false, Dir.NORTH],
+								[OverlayTiles.HOUSE_15, 1, true, false, Dir.NORTH],
+								[OverlayTiles.HOUSE_16, 1, true, false, Dir.NORTH],
+								
+								[OverlayTiles.FRUIT_TREE_01, 5, false, true, Dir.ANY],
+								[OverlayTiles.FRUIT_TREE_02, 5, false, true, Dir.ANY],
+								[OverlayTiles.WELL_01, 1, false, true, Dir.ANY],
+
+	],
+
+	Enums.Cell.DISTRICT_STAND_IN_2 : [
+								# [OverlayTiles.HOUSE_01, 1, true, false, Dir.SOUTH],
+								[OverlayTiles.G_HOUSE_02, 1, true, false, Dir.SOUTH],
+								[OverlayTiles.G_HOUSE_03, 1, true, false, Dir.SOUTH],
+								[OverlayTiles.G_HOUSE_04, 1, true, false, Dir.SOUTH],
+								[OverlayTiles.G_HOUSE_05, 1, true, false, Dir.EAST],
+								[OverlayTiles.G_HOUSE_05, 1, true, false, Dir.WEST],
+								[OverlayTiles.G_HOUSE_06, 1, true, false, Dir.EAST],
+								[OverlayTiles.G_HOUSE_06, 1, true, false, Dir.WEST],
+								[OverlayTiles.G_HOUSE_14, 1, true, false, Dir.NORTH],
+								[OverlayTiles.G_HOUSE_15, 1, true, false, Dir.NORTH],
+								[OverlayTiles.G_HOUSE_16, 1, true, false, Dir.NORTH],
+								
+								[OverlayTiles.FRUIT_TREE_01, 5, false, true, Dir.ANY],
+								[OverlayTiles.FRUIT_TREE_02, 5, false, true, Dir.ANY],
+								[OverlayTiles.G_WELL_01, 1, false, true, Dir.ANY],
+
+	],
+
+	Enums.Cell.DISTRICT_STAND_IN_3 : [
+								# [OverlayTiles.HOUSE_01, 1, true, false, Dir.SOUTH],
+								[OverlayTiles.B_HOUSE_02, 1, true, false, Dir.SOUTH],
+								[OverlayTiles.B_HOUSE_03, 1, true, false, Dir.SOUTH],
+								[OverlayTiles.B_HOUSE_04, 1, true, false, Dir.SOUTH],
+								[OverlayTiles.B_HOUSE_05, 1, true, false, Dir.EAST],
+								[OverlayTiles.B_HOUSE_05, 1, true, false, Dir.WEST],
+								[OverlayTiles.B_HOUSE_06, 1, true, false, Dir.EAST],
+								[OverlayTiles.B_HOUSE_06, 1, true, false, Dir.WEST],
+								[OverlayTiles.B_HOUSE_14, 1, true, false, Dir.NORTH],
+								[OverlayTiles.B_HOUSE_15, 1, true, false, Dir.NORTH],
+								[OverlayTiles.B_HOUSE_16, 1, true, false, Dir.NORTH],
+								
+								[OverlayTiles.FRUIT_TREE_01, 5, false, true, Dir.ANY],
+								[OverlayTiles.FRUIT_TREE_02, 5, false, true, Dir.ANY],
+								[OverlayTiles.B_WELL_01, 1, false, true, Dir.ANY],
+
+	],
+
+	Enums.Cell.DISTRICT_STAND_IN_CASTLE : [
+								[OverlayTiles.HOUSE_01, 1, true, true, Dir.SOUTH],
+								[OverlayTiles.G_HOUSE_01, 1, true, true, Dir.SOUTH],
+								[OverlayTiles.B_HOUSE_01, 1, true, true, Dir.SOUTH],
+								# [OverlayTiles.HOUSE_04, 1, true, true, Dir.SOUTH],
+								# [OverlayTiles.HOUSE_05, 1, true, true, Dir.EAST],
+								# [OverlayTiles.HOUSE_05, 1, true, true, Dir.WEST],
+								# [OverlayTiles.HOUSE_06, 1, true, true, Dir.EAST],
+								# [OverlayTiles.HOUSE_06, 1, true, true, Dir.WEST],
+								# [OverlayTiles.HOUSE_14, 1, true, true, Dir.NORTH],
+								# [OverlayTiles.HOUSE_15, 1, true, true, Dir.NORTH],
+								# [OverlayTiles.HOUSE_16, 1, true, true, Dir.NORTH],
+								
+								# [OverlayTiles.FRUIT_TREE_01, 5, false, true, Dir.ANY],
+								# [OverlayTiles.FRUIT_TREE_02, 5, false, true, Dir.ANY],
+								[OverlayTiles.WELL_01, 0.1, false, true, Dir.ANY],
+
+	],
+
+	Enums.Cell.OUTSIDE_SPACE : [[OverlayTiles.TREE_1 ,10, true, true, Dir.ANY],
+								[OverlayTiles.TREE_2 ,10, true, true, Dir.ANY],
+								[OverlayTiles.TREE_3,  4, true, true, Dir.ANY],
+								[OverlayTiles.TREE_4,  4, true, true, Dir.ANY],
+								[OverlayTiles.ROCK_1,  2, true, true, Dir.ANY],
+								[OverlayTiles.TENT_01, 0.5, true, true, Dir.ANY],
+								],
 }
 
 const valid_for_overlay : Array[int] = [

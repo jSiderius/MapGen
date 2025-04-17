@@ -5,6 +5,7 @@ class_name DistrictManager
 var district : Resource = preload("res://code/Districts/district.gd")
 var districts_dict : Dictionary = {}
 var center_district_id : int
+var castle_district_id : int
 var square_size : float
 
 func _init(id_grid : Grid, _square_size : float):
@@ -113,8 +114,11 @@ func update_or_init_bounding_data() -> void:
 	for key in districts_dict.keys(): 
 		districts_dict[key].set_bounding_box()
 
+func get_district_keys() -> Array:
 
-func get_keys_sorted_by_attribute(attribute : String, ascending : bool) -> Array[int]:
+	return districts_dict.keys()
+
+func get_keys_sorted_by_attribute(attribute : String, ascending : bool, districts_only : bool = false) -> Array[int]:
 	'''
 		Purpose: 
 			Construct and return an array of district ID's sorted by a district class attribute
@@ -135,9 +139,16 @@ func get_keys_sorted_by_attribute(attribute : String, ascending : bool) -> Array
 	# Compile the ordered array of keys
 	var keys_arr : Array[int] = []
 	for distr in districts_arr:
+		if districts_only and not is_district(distr.id): continue
 		keys_arr.append(distr.id)
 	
 	return keys_arr
+
+func select_castle_district():
+	var keys = get_keys_sorted_by_attribute("size_", false, true)
+	castle_district_id = keys[randi() % min(len(keys), 4)]
+	get_district(castle_district_id).generic_district = Enums.Cell.DISTRICT_STAND_IN_CASTLE
+
 
 func get_center_district() -> District:
 	''' Returns the center district '''
@@ -237,13 +248,15 @@ func get_bounding_box() -> Rect2:
 	var bb_min : Vector2i = Vector2i(2147483647, 2147483647) # INT 32 Max
 	var bb_max : Vector2i = Vector2i(0, 0)
 
-	for d in districts_dict.values(): 
-		var d_bb : Rect2 = d.bounding_box
-		bb_min[0] = min(bb_min[0], d_bb.position)
-		bb_min[1] = min(bb_min[1], d_bb.size)
+	for d in districts_dict.values():
+		if not is_district(d.id): continue
 
-		bb_max[0] = max(bb_max[0], d_bb.position)
-		bb_max[1] = max(bb_max[1], d_bb.size)
+		var d_bb : Rect2 = d.bounding_box
+		bb_min[0] = min(bb_min[0], d_bb.position[0])
+		bb_min[1] = min(bb_min[1], d_bb.position[1])
+
+		bb_max[0] = max(bb_max[0], d_bb.size[0])
+		bb_max[1] = max(bb_max[1], d_bb.size[1])
 	
 	return Rect2(bb_min, bb_max)
 	

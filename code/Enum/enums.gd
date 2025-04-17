@@ -1,9 +1,14 @@
 class_name Enums
 
 enum Cell {
-    CITY_ROAD = -10,
-    WATER_BORDER = -9,
-    DISTRICT_STAND_IN = -8,
+    CASTLE_WALL = -15,
+    DISTRICT_STAND_IN = -14,
+    DISTRICT_STAND_IN_CASTLE = -13,
+    DISTRICT_STAND_IN_3 = -12,
+    DISTRICT_STAND_IN_2 = -11,
+    DISTRICT_STAND_IN_1 = -10,
+    CITY_ROAD = -9,
+    WATER_BORDER = -8,
     HELPER = -7,
     WATER = -6,
 
