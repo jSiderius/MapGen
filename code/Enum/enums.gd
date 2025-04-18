@@ -1,17 +1,18 @@
 class_name Enums
 
 enum Cell {
-    CASTLE_WALL = -15,
-    DISTRICT_STAND_IN = -14,
-    DISTRICT_STAND_IN_CASTLE = -13,
+    CASTLE_WALL = -16,
+    DISTRICT_STAND_IN = -15,
+    DISTRICT_STAND_IN_CASTLE = -14,
+    DISTRICT_STAND_IN_SLUMS = -13,
     DISTRICT_STAND_IN_3 = -12,
     DISTRICT_STAND_IN_2 = -11,
-    DISTRICT_STAND_IN_1 = -10,
+    DISTRICT_STAND_IN_MARKET = -10,
     CITY_ROAD = -9,
     WATER_BORDER = -8,
     HELPER = -7,
     WATER = -6,
-
+    BRIDGE = -5,
     DISTRICT_WALL = -4,
     CITY_WALL = -3,
     DISTRICT_CENTER = -2,
@@ -23,9 +24,10 @@ enum Cell {
 
 enum Border {
     NORTH = 0,
-    SOUTH = 1, 
-    EAST = 2, 
+    EAST = 1, 
+    SOUTH = 2, 
     WEST = 3,
+    ANY = 4,
 }
 
 enum GridInitType {

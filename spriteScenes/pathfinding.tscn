@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=3 uid="uid://bw45edttvkyqr"]
+[gd_scene load_steps=35 format=3 uid="uid://bw45edttvkyqr"]
 
 [ext_resource type="Script" path="res://spriteScenes/pathfinding.gd" id="1_sx1gb"]
 [ext_resource type="Texture2D" uid="uid://ic3mwoam0p5e" path="res://Resources/icon.svg" id="2_pelju"]
@@ -8,7 +8,7 @@ load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_80ump"]
 atlas = SubResource("CompressedTexture2D_guoff")
-region = Rect2(0, 64, 16, 16)
+region = Rect2(0, 0, 432, 640)
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_kkmij"]
 load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
@@ -17,11 +17,11 @@ load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.
 atlas = SubResource("CompressedTexture2D_kkmij")
 region = Rect2(256, 544, 16, 16)
 
-[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_syhyp"]
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_uju7u"]
 load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_intk3"]
-atlas = SubResource("CompressedTexture2D_syhyp")
+atlas = SubResource("CompressedTexture2D_uju7u")
 region = Rect2(32, 64, 16, 16)
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_fccrr"]
@@ -50,7 +50,14 @@ load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_3r8tl"]
 atlas = SubResource("CompressedTexture2D_0v330")
-region = Rect2(0, 96, 16, 16)
+region = Rect2(176, 480, 192, 16)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_ib3gd"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_t4c46"]
+atlas = SubResource("CompressedTexture2D_ib3gd")
+region = Rect2(160, 480, 16, 16)
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_rx7pg"]
 load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
@@ -123,9 +130,10 @@ scale = Vector2(0.552808, 0.552808)
 texture = ExtResource("2_pelju")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-position = Vector2(-313, 168)
-scale = Vector2(0.998318, 1)
+position = Vector2(-593, 96)
+scale = Vector2(0.531976, 0.539116)
 texture = SubResource("AtlasTexture_80ump")
+metadata/_edit_group_ = true
 
 [node name="Sprite2D14" type="Sprite2D" parent="."]
 rotation = -0.0487006
@@ -150,9 +158,14 @@ position = Vector2(-281, 184)
 texture = SubResource("AtlasTexture_yxmg2")
 
 [node name="Sprite2D7" type="Sprite2D" parent="."]
-position = Vector2(-313, 200)
+position = Vector2(-193, 224)
 scale = Vector2(0.998318, 1)
 texture = SubResource("AtlasTexture_3r8tl")
+
+[node name="Sprite2D18" type="Sprite2D" parent="."]
+position = Vector2(-209, 224)
+scale = Vector2(0.998318, 1)
+texture = SubResource("AtlasTexture_t4c46")
 
 [node name="Sprite2D8" type="Sprite2D" parent="."]
 position = Vector2(-297, 232)

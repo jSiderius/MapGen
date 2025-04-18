@@ -146,12 +146,11 @@ func select_random_items(arr: Array, count: int) -> Array:
 	# Take the first_screenshot `count` items
 	return temp_arr.slice(0, count)
 
-func random_edge_position(height: int, width: int,  avoidance_vector : Vector2i = Vector2i(-1, -1), sides : Array[int] = [Enums.Border.NORTH, Enums.Border.SOUTH, Enums.Border.EAST, Enums.Border.WEST]) -> Vector2i:
+func random_edge_position(height: int, width: int,  avoidance_vectors : Array[Vector2i] = [], avoidance_distance : int = 0, sides : Array[int] = [Enums.Border.NORTH, Enums.Border.SOUTH, Enums.Border.EAST, Enums.Border.WEST]) -> Vector2i:
 	''' Gives a random position on the edge of the grid '''
 
 	var selected : Vector2i
 	var trials : int = 0
-	var min_distance : float = max(width, height) * 0.5
 
 	while true: 
 		var side : int = sides[randi() % len(sides)]
@@ -160,31 +159,42 @@ func random_edge_position(height: int, width: int,  avoidance_vector : Vector2i 
 			Enums.Border.NORTH:
 				selected = Vector2i(0, randi() % width)
 			Enums.Border.SOUTH:
-				selected = Vector2i(height - 1, randi() % width)
+				selected = Vector2i(height, randi() % width)
 			Enums.Border.WEST:
 				selected = Vector2i(randi() % height, 0)
 			Enums.Border.EAST:
-				selected = Vector2i(randi()%height, width - 1)
+				selected = Vector2i(randi()%height, width)
 		
-		if avoidance_vector == Vector2i(-1, -1) or trials > 100 or selected.distance_to(avoidance_vector) > min_distance:
+		var min_distance : int = 2147483647 # INT 32 max
+		for vec in avoidance_vectors:
+			min_distance = min(min_distance, selected.distance_to(vec))
+
+		if trials > 100:
+			return Vector2i(-1, -1)
+		if min_distance > avoidance_distance:
 			return selected
 		
-	return Vector2i(0, 0) # Shouldn't be reached
+		trials += 1
 
-func select_road_position(min_boundary : Vector2i, max_boundary : Vector2i, border : int): 
+	return Vector2i(-1, -1) # Shouldn't be reached
+
+func select_road_position(min_boundary : Vector2i, max_boundary : Vector2i, grid_boundary : Vector2i, border : int): 
 	''' Selects an edge position from a custom defined boundary '''
 
+	if border == Enums.Border.ANY: 
+		border = [Enums.Border.NORTH, Enums.Border.EAST, Enums.Border.SOUTH, Enums.Border.WEST][randi() % 4]
+	
 	var selected : Vector2i
 
 	match border:
 		Enums.Border.NORTH:
-			selected = Vector2i(min_boundary[0], min_boundary[1] + randi() % (max_boundary[1] - min_boundary[1]))
+			selected = Vector2i(0, randi_range(min_boundary[1], max_boundary[1]))
 		Enums.Border.SOUTH:
-			selected = Vector2i(max_boundary[1], min_boundary[1] + randi() % (max_boundary[1] - min_boundary[1]))
+			selected = Vector2i(max_boundary[1], randi_range(min_boundary[1], max_boundary[1]))
 		Enums.Border.WEST:
-			selected = Vector2i(min_boundary[0] + randi() % (max_boundary[0] - min_boundary[0]), min_boundary[1])
+			selected = Vector2i(randi_range(min_boundary[0], max_boundary[0]), grid_boundary[1])
 		Enums.Border.EAST:
-			selected = Vector2i(min_boundary[0] + randi() % (max_boundary[0] - min_boundary[0]), max_boundary[1])
+			selected = Vector2i(randi_range(min_boundary[0], max_boundary[0]) ,0)
 	
 	return selected
 
@@ -249,3 +259,22 @@ func get_all_edge_vectors(height : int, width : int) -> Array[Vector2i]:
 		edge_vectors.append(Vector2i(i, width - 1))
 	
 	return edge_vectors
+
+func weighted_random_index(weights : Array[float]) -> int:
+	
+	# Calculate the sum of the weights
+	var total : float = 0.0
+	for weight in weights:
+		total += weight
+	
+	# Randomly create a float less than or equal to the total weighting 
+	var rnd : float = randf() * total
+	
+	# Select an index according the the float	
+	var accum = 0.0
+	for i in range(len(weights)):
+		accum += weights[i]
+		if rnd < accum:
+			return i
+			
+	return len(weights) - 1  # Fallback

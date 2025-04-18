@@ -22,4 +22,4 @@ wfcConfig="*res://code/Tiles/wfc_config.gd"
 [display]
 
 window/size/viewport_width=1200
-window/size/viewport_height=900
+window/size/viewport_height=850

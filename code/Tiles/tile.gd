@@ -8,11 +8,8 @@ var tile_neighbors : Dictionary = {}
 var cell_id : int
 var overlay : int
 
-# TODO: x, y necessary ? 
 func _init(_cell_id : int) -> void:
 	cell_id = _cell_id 
-	# if is_district(cell_id): 
-		# cell_id = [Enums.Cell.DISTRICT_STAND_IN_1, Enums.Cell.DISTRICT_STAND_IN_2][randi() % 2]
 
 	# possibilities = wfcConfig.tile_edges.keys()
 	if cell_id in wfcConfig.cell_to_tile_options: 
@@ -36,7 +33,6 @@ func add_overlay() -> void:
 		if tile_neighbors[direction].cell_id == Enums.Cell.CITY_ROAD: 
 			dirs.append(direction)
 
-	
 	if len(dirs) > 0:
 		road_adj_overlay(dirs)
 	else: 
@@ -101,7 +97,10 @@ func has_priority_options() -> bool:
 func collapse():
 	var weights : Array[float] = []
 	for possibility in possibilities:
-		weights.append(wfcConfig.tile_weights[possibility])
+		if cell_id in wfcConfig.cell_alt_weightings and possibility in wfcConfig.cell_alt_weightings[cell_id]:
+			weights.append(wfcConfig.cell_alt_weightings[cell_id][possibility])
+		else:
+			weights.append(wfcConfig.tile_weights[possibility])
 	
 	possibilities = [possibilities[weighted_random_index(weights)]]
 	# possibilities = [possibilities[randi() % len(possibilities)]]
@@ -119,7 +118,7 @@ func get_tile_type():
 	
 	return possibilities[0]
 
-func constrain(neighbor_possibilities, direction, recursive = false): 
+func constrain(neighbor_possibilities, direction): 
 	var reduced : bool = false
 	
 	if entropy <= 0: return reduced
@@ -133,17 +132,16 @@ func constrain(neighbor_possibilities, direction, recursive = false):
 	var opposite = wfcConfig.get_opposite_direction(direction)
 	
 	
-	if recursive: print("Pos ", possibilities)
 	# Remove a possibility if it's edge is not reciprocated by any possible connection in the neighboring tile	
 	for i in range(possibilities.size() - 1, -1, -1):
-		if recursive: print("Pos[i] ", possibilities[i])
 		if wfcConfig.tile_edges[possibilities[i]][opposite] not in connecting_edges_set: 
 			possibilities.remove_at(i)
 			reduced = true
 	
 			
-	if len(possibilities) == 0 and not recursive:
-		removal_failure()
+	if len(possibilities) == 0:
+		# removal_failure()
+		possibilities = [wfcConfig.TileType.TILE_ERROR]
 
 	entropy = len(possibilities) if len(possibilities) > 1 else 0
 
@@ -156,8 +154,7 @@ func removal_failure():
 	possibilities.erase(wfcConfig.TileType.CASTLE_TOWER_01)
 
 	for dir in tile_neighbors.keys():
-		print(tile_neighbors[dir].possibilities)
-		constrain(tile_neighbors[wfcConfig.get_opposite_direction(dir)].possibilities, dir, true)
+		constrain(tile_neighbors[dir].possibilities, wfcConfig.get_opposite_direction(dir))
 	
 	if len(possibilities) == 0 or possibilities == [wfcConfig.TileType.TILE_ERROR]:
 		possibilities = [wfcConfig.TileType.TILE_ERROR]
@@ -167,25 +164,5 @@ func removal_failure():
 			if possibilities[i] == wfcConfig.TileType.TILE_ERROR:
 				possibilities.remove_at(i)
 				break
-
-
-func weighted_random_index(weights : Array[float]) -> int:
-	
-	# Calculate the sum of the weights
-	var total : float = 0.0
-	for weight in weights:
-		total += weight
-	
-	# Randomly create a float less than or equal to the total weighting 
-	var rnd : float = randf() * total
-	
-	# Select an index according the the float	
-	var accum = 0.0
-	for i in range(len(weights)):
-		accum += weights[i]
-		if rnd < accum:
-			return i
-			
-	return len(weights) - 1  # Fallback
 
 # TODO: Add recursive fail safes if necessary

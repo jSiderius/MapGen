@@ -149,7 +149,6 @@ func select_castle_district():
 	castle_district_id = keys[randi() % min(len(keys), 4)]
 	get_district(castle_district_id).generic_district = Enums.Cell.DISTRICT_STAND_IN_CASTLE
 
-
 func get_center_district() -> District:
 	''' Returns the center district '''
 
@@ -183,7 +182,7 @@ func get_district(key : int) -> District:
 	''' Returns a district from 'districts_dict' if it exists '''
 
 	if key not in districts_dict:
-		print_debug("Non-existent district (" + str(key) + ") requested from district manager")
+		# print_debug("Non-existent district (" + str(key) + ") requested from district manager")
 		push_error("Non-existent district (" + str(key) + ") requested from district manager")
 		return null
 
@@ -249,9 +248,12 @@ func get_bounding_box() -> Rect2:
 	var bb_max : Vector2i = Vector2i(0, 0)
 
 	for d in districts_dict.values():
+		print(d.id, " ", is_district(d.id))
 		if not is_district(d.id): continue
+		print('through')
 
 		var d_bb : Rect2 = d.bounding_box
+		print(d_bb)
 		bb_min[0] = min(bb_min[0], d_bb.position[0])
 		bb_min[1] = min(bb_min[1], d_bb.position[1])
 
@@ -265,6 +267,50 @@ func erase_district(id : int) -> void:
 	
 	if id in districts_dict: 
 		districts_dict.erase(id)
+
+func get_nearest(pos : Vector2i, id : int) -> Vector2i:
+
+	if not id in districts_dict:
+		print_debug("Requested invalid district")
+		push_error("Requested invalid district")
+		return Vector2i(-1, -1)
+	
+	return districts_dict[id].get_nearest(pos)
+
+func get_water_neighbors() -> Array[District]:
+	var dist_array : Array[District] = []
+	for dist in districts_dict.values():
+		if not dist.has_neighbor(Enums.Cell.WATER): continue
+
+		dist_array.append(dist)
+	
+	return dist_array
+
+func can_path_to(start_id : int, end_id: int, exclusion_ids : Array[int]) -> bool:
+	var visited = {}
+	var queue = [districts_dict[start_id]]
+
+	while queue.size() > 0:
+		var current = queue.pop_front()
+
+		if current.id == end_id:
+			return true
+
+		if current.id in visited:
+			continue
+
+		visited[current.id] = true
+
+		for neighbor_id in current.border_by_neighbor:
+			if neighbor_id in exclusion_ids or not is_district(neighbor_id): continue
+
+			if neighbor_id in districts_dict:
+				var neighbor = districts_dict[neighbor_id]
+				if neighbor.id not in visited:
+					queue.append(neighbor)
+
+	return false
+
 
 func _draw() -> void:
 	

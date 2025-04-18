@@ -357,39 +357,80 @@ func add_river(start: Vector2i, end: Vector2i, offset_probability : float = 0.8,
 	district_manager_queue_update = true
 
 # TODO: Consolidate with Graph
-func add_major_roads():
-	init_empty_graph()
-
-	var bounding_box : Rect2 = district_manager.get_bounding_box()
-	var bb_min : Vector2 = bounding_box.position
-	var bb_max : Vector2 = bounding_box.size
-	visual_debug_cells.append(bb_min)
-	visual_debug_cells.append(bb_max)
-	print(bb_min, " ", bb_max)
-
+func add_major_roads(road_value : int = Enums.Cell.CITY_ROAD):
 	
-	var percentage : float = height * 0.1
-	var road_start : Vector2i = select_road_position(Vector2i(0, 0), Vector2i(height, width), Enums.Border.EAST)
-	var road_end : Vector2i = select_road_position(Vector2i(max(road_start[0] - percentage, 0), 0), Vector2i(min(road_start[0] + percentage, height), width), Enums.Border.WEST)
-	
-	# TODO These are a little off when working on this again
-	# visual_debug_cells.append(Vector2i(max(road_start[0] - percentage, 0), 0))
-	# visual_debug_cells.append(Vector2i(max(road_start[0] - percentage, width), width-1))
-	# visual_debug_cells.append(Vector2i(min(road_start[0] + percentage, height), 0))
-	# visual_debug_cells.append(Vector2i(min(road_start[0] + percentage, height), width-1))
 
 	update_district_manager()
+	init_empty_graph()
 
-	var _path = graph.a_star(self, road_start, road_end, Enums.NeighborsType.FOUR_NEIGHBORS)
+	var large_path = []
+	var road_edges : Array[Vector2i] = []
+	for i in range(20):
+		var road_edge : Vector2i = random_edge_position(height-1, width-1, road_edges, round(max(height, width) * 0.3), [Enums.Border.NORTH, Enums.Border.EAST, Enums.Border.SOUTH, Enums.Border.WEST]) # TODO Also ensure not in water
+		if road_edge == Vector2i(-1, -1) or index_vec(road_edge) == Enums.Cell.WATER: continue
+		var road_tie_in : Vector2i = district_manager.get_nearest(road_edge, Enums.Cell.CITY_ROAD)
+		large_path += graph.a_star(self, road_edge, road_tie_in, [], Enums.NeighborsType.FOUR_NEIGHBORS)
+		road_edges.append(road_edge)
 
-	# var center_district : District = district_manager.get_center_district()
-	# var _path = graph.a_star(self, road_start, center_district.center, Enums.NeighborsType.FOUR_NEIGHBORS)
-	# _path = _path + graph.a_star(self, center_district.center, road_end, Enums.NeighborsType.FOUR_NEIGHBORS)
 
-	for pos in _path: 
-		set_id_vec(pos, Enums.Cell.MAJOR_ROAD)
-	
 	district_manager_queue_update = true
+
+	return large_path
+	# var bounding_box : Rect2 = district_manager.get_bounding_box()
+	# var bb_min : Vector2 = Vector2i(bounding_box.position)
+	# var bb_max : Vector2 = Vector2i(bounding_box.size)
+	# visual_debug_cells.append(Vector2i(bb_min))
+	# visual_debug_cells.append(Vector2i(bb_max))
+	
+	# var percentage : float = height * 0.1
+	# var road_start : Vector2i = select_road_position(bb_min, bb_max, Vector2i(height-1, width-1), Enums.Border.EAST)
+	
+	# bb_min[0] = max(bb_min[0], road_start[0] - percentage)
+	# bb_max[0] = min(bb_max[0], road_start[0] + percentage)
+	# var road_end : Vector2i = select_road_position(bb_min, bb_max, Vector2i(height-1, width-1), Enums.Border.WEST)
+	
+	# visual_debug_cells.append(Vector2i(bb_min))
+	# visual_debug_cells.append(Vector2i(bb_max))
+	# update_district_manager()
+
+	# # var _path = graph.a_star(self, road_start, road_end, Enums.NeighborsType.FOUR_NEIGHBORS)
+
+	# # var center_district : District = district_manager.get_center_district()
+	# # var _path = graph.a_star(self, road_start, center_district.center, Enums.NeighborsType.FOUR_NEIGHBORS)
+	# # _path = _path + graph.a_star(self, center_district.center, road_end, Enums.NeighborsType.FOUR_NEIGHBORS)
+
+	# for pos in _path: 
+	# 	set_id_vec(pos, Enums.Cell.MAJOR_ROAD)
+	
+	# district_manager_queue_update = true
+
+func add_inner_bridges(road_value : int = Enums.Cell.CITY_ROAD):
+
+	update_district_manager()
+	init_empty_graph()
+
+	var water_neighbors = district_manager.get_water_neighbors()
+	var large_path = []
+	var bridges : int = 0
+
+	for i in range(water_neighbors.size()):
+		for j in range(i + 1, water_neighbors.size()):
+			if bridges > 2: break
+
+			var district_a = water_neighbors[i]
+			var district_b = water_neighbors[j]
+
+			if not district_manager.can_path_to(district_a.id, district_b.id, [Enums.Cell.WATER, Enums.Cell.BRIDGE]):
+				bridges += 1
+			
+				large_path += graph.a_star(self, district_a.rand_border(Enums.Cell.WATER), district_b.rand_border(Enums.Cell.WATER), large_path, Enums.NeighborsType.FOUR_NEIGHBORS)
+				break
+	
+	return large_path
+
+func set_path_in_grid(_path, road_value : int = Enums.Cell.CITY_ROAD):
+	for pos in _path:
+		set_id_vec(pos, Enums.Cell.BRIDGE if index_vec(pos) in [Enums.Cell.WATER, Enums.Cell.BRIDGE] else road_value)	
 
 func flood_fill(target_id : int = Enums.Cell.VOID_SPACE_0) -> void: 
 	'''
@@ -901,7 +942,7 @@ func add_border_to_grid(render_all : bool = true) -> void:
 
 			# Check if the neighbor has been rendered
 			#  or key in [Enums.Cell.WATER , Enums.Cell.OUTSIDE_SPACE]
-			if key in rendered_borders_set: continue
+			if key in rendered_borders_set or key == Enums.Cell.MAJOR_ROAD: continue
 
 			# Iterate all border positions
 			for pos in d.border_by_neighbor[key]:
@@ -918,17 +959,25 @@ func add_border_to_grid(render_all : bool = true) -> void:
 
 	district_manager_queue_update = true
 
-func add_castle_wall_to_grid(border_value : int = Enums.Cell.CITY_ROAD) -> void:
-	
+func add_castle_wall_to_grid(surround_city : bool, exclusion_path = [], border_value : int = Enums.Cell.CITY_ROAD) -> void:
+	var city_wall_neighbors : Array = [Enums.Cell.OUTSIDE_SPACE]
+	if randf() < 0.2: city_wall_neighbors.append(Enums.Cell.WATER)
+
 	for y in range(height): for x in range(width):
 		
 		if not index(y, x) == border_value: continue
+		if Vector2i(y, x) in exclusion_path: continue
 
 		for n in neighbors[Enums.NeighborsType.EIGHT_NEIGHBORS]:
 			var n_pos = Vector2i(y, x) + n
+			
+			if not bounds_check(n_pos, Vector2i(height, width)): continue
+			
 			var n_val = index_vec(n_pos)
 
 			if district_manager.get_district(n_val) and district_manager.get_district(n_val).generic_district == Enums.Cell.DISTRICT_STAND_IN_CASTLE:
+				set_id(y, x, Enums.Cell.CASTLE_WALL)
+			elif surround_city and n_val in city_wall_neighbors: 
 				set_id(y, x, Enums.Cell.CASTLE_WALL)
 
 func validate_border(border_value : int = Enums.Cell.CITY_ROAD, n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> bool:
@@ -954,8 +1003,10 @@ func validate_border(border_value : int = Enums.Cell.CITY_ROAD, n_type : int = E
 
 		# Loop to ensure the cell neighbors OUTSIDE_SPACE
 		var observed_neighbors : Dictionary = {}
-		for n in neighbors[n_type]: # Todo: no bounds check but fine ???
+		for n in neighbors[n_type]:
 			var n_pos : Vector2i = Vector2i(y, x) + n
+			
+			if not bounds_check(n_pos, Vector2i(height, width)): continue
 			var n_val : int = index_vec(n_pos)
 
 			if n_val in [border_value]: continue
@@ -986,8 +1037,10 @@ func add_generic_districts() -> void:
 
 	for key in district_manager.get_district_keys():
 		if not is_district(key): continue
-		district_manager.get_district(key).generic_district = [Enums.Cell.DISTRICT_STAND_IN_1, Enums.Cell.DISTRICT_STAND_IN_2, Enums.Cell.DISTRICT_STAND_IN_3][randi() % 3]
-	district_manager.select_castle_district()
+
+		var weights : Array [float] = [1, 2, 2, 1]
+		var options : Array[int] = [Enums.Cell.DISTRICT_STAND_IN_MARKET, Enums.Cell.DISTRICT_STAND_IN_2, Enums.Cell.DISTRICT_STAND_IN_3, Enums.Cell.DISTRICT_STAND_IN_SLUMS]
+		district_manager.get_district(key).generic_district = options[weighted_random_index(weights)]
 
 func _draw() -> void:
 	''' Draws to screen based on the values class data ''' 

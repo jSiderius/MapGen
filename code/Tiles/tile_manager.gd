@@ -42,9 +42,14 @@ func generate_tile_grid(id_grid : Grid) -> void:
 		push_error("Grid does not contain district manager")
 	
 	# Construct an array of all border water cells
-	var water_border : Array[Vector2i] = []
+	var water_border : Array = []
+	
 	if id_grid.district_manager.has_district(Enums.Cell.WATER):
-		water_border = id_grid.district_manager.get_district(Enums.Cell.WATER).border
+		var border_by_neighbor = id_grid.district_manager.get_district(Enums.Cell.WATER).border_by_neighbor
+		for key in border_by_neighbor.keys():
+			if key == Enums.Cell.BRIDGE: continue
+
+			water_border += border_by_neighbor[key]
 
 	# Iterate the grid and create a tile for each cell
 	for y in range(height): 
@@ -99,7 +104,7 @@ func get_type(y : int, x : int) -> int:
 func get_lowest_entropy_tile_pq():
 	return pq.pop_min()
 
-func wave_function_collapse_pq(spectate : bool = false) -> void:
+func wave_function_collapse_pq(spectate : bool = true) -> void:
 	''' Execute the wave function collapse algorithm '''
 
 	# Run iterations of the algorithm until complete
@@ -108,6 +113,10 @@ func wave_function_collapse_pq(spectate : bool = false) -> void:
 		is_complete = wave_function_collapse_iteration_pq()
 		if spectate: await redraw_and_pause(-1, 0.0, false, false)
 	
+	for y in range(height): for x in range(width):
+		# if get_type(y, x) == wfcConfig.TileType.TILE_ERROR: tile_grid[y][x].removal_failure()
+		pass
+
 	await redraw_and_pause(-1, 0.0, false, false)
 
 	complete = true

@@ -38,8 +38,9 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(2, 0.2)
 
 	river_start = random_edge_position(id_grid.height, id_grid.width)
-	river_end = random_edge_position(id_grid.height, id_grid.width, river_start)
+	river_end = random_edge_position(id_grid.height, id_grid.width, [river_start], min(id_grid.width, id_grid.height) * 0.5)
 	id_grid.add_river(river_start, river_end, 0.8, 2, 4)
+	# id_grid.add_river(Vector2i(0, round(id_grid.width / 2.0)), Vector2i(id_grid.height, round(id_grid.width / 2.0)), 0.8, 2, 4)
 	if debug: await redraw_and_pause(3, 0.2)
 
 	id_grid.cellular_automata_trials([6])
@@ -69,7 +70,7 @@ func _ready() -> void:
 	if debug: await redraw_and_pause(10, 0.2)
 	
 	# Eliminate groups of city space less than some threshold percentage of total city space
-	id_grid.flood_fill_elim_annexed_space(0.25, Enums.Cell.VOID_SPACE_1, Enums.Cell.OUTSIDE_SPACE)
+	id_grid.flood_fill_elim_annexed_space(0.20, Enums.Cell.VOID_SPACE_1, Enums.Cell.OUTSIDE_SPACE)
 	if debug: await redraw_and_pause(11, 0.2)
 
 	id_grid.flood_fill_elim_inside_terrain()
@@ -84,11 +85,12 @@ func _ready() -> void:
 
 	# Add roads
 	# TODO: Road shouldn't be selected on a water cell
-	# id_grid.add_major_roads()
-	if debug: await redraw_and_pause(13, 0.2)
-	
+
 	id_grid.flood_fill()
 	if debug: await redraw_and_pause(15, 0.2)
+
+	# id_grid.add_major_roads()
+	if debug: await redraw_and_pause(13, 0.2)
 
 	# Parse out the smallest groups 
 	id_grid.parse_smallest_districts(30)
@@ -98,24 +100,39 @@ func _ready() -> void:
 	id_grid.expand_id_grid([Enums.Cell.OUTSIDE_SPACE, Enums.Cell.MAJOR_ROAD, Enums.Cell.WATER], [])
 	if debug: await redraw_and_pause(17, 0.2)
 
-	# id_grid.add_city_border(Enums.Cell.DISTRICT_WALL) 
-	if debug: await redraw_and_pause(19, 0.2)
 
-	# id_grid.toggle_border_rendering(true)
+	var _path = id_grid.add_inner_bridges()
 	await id_grid.add_border_to_grid(true)
+	while true:
+		if not id_grid.validate_border(Enums.Cell.CITY_ROAD): break
+		await redraw_and_pause(-1, 0.0)
 	if debug: await redraw_and_pause(20, 0.2)
+
+	_path += id_grid.add_major_roads()
+	id_grid.set_path_in_grid(_path)
+	
+	if debug: await redraw_and_pause(20, 0.2)
+
+	var generate_castle_district : bool = randf() < 0.8
+	var generate_city_castle_wall : bool = randf() < 0.35
 
 	id_grid.add_generic_districts()
-	id_grid.add_castle_wall_to_grid()
+	if generate_castle_district: id_grid.district_manager.select_castle_district()
+	id_grid.add_castle_wall_to_grid(generate_city_castle_wall, _path)
+
+	voronoi_id_grid.overwrite_cells_by_id([Enums.Cell.MAJOR_ROAD], Enums.Cell.CITY_ROAD)
+
+	
 	id_grid.init_tile_manager()
-	if debug: await redraw_and_pause(20, 0.2)
+	if debug: await redraw_and_pause(20, 5.0)
+	if debug: await redraw_and_pause(20, 0.1)
 
 func test_outsidespace_wfc():
 	id_grid.clear_grid([], Enums.Cell.OUTSIDE_SPACE)
 	id_grid.init_district_manager()
 	id_grid.init_tile_manager()
 
-func _draw() -> void: 
+func _draw() -> void:
 	if secondary_grid_debug: 
 		secondary_grid_debug.queue_redraw()
 		return

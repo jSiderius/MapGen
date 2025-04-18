@@ -1,10 +1,17 @@
-[gd_scene load_steps=6 format=3 uid="uid://dwlw0bkdery3f"]
+[gd_scene load_steps=8 format=3 uid="uid://dwlw0bkdery3f"]
 
 [ext_resource type="Script" path="res://code/main.gd" id="1_i8x8q"]
 [ext_resource type="Texture2D" uid="uid://obgjhuwjvyul" path="res://Resources/Village Assets/Village Map Assets Backgrounds - Autumn.jpg" id="2_fxkfp"]
 [ext_resource type="Texture2D" uid="uid://dekb7us5d5gaw" path="res://Resources/Village Assets/Village Map Assets Backgrounds - Grass.jpg" id="3_pevnk"]
 [ext_resource type="Texture2D" uid="uid://dy5ie0amg8wbt" path="res://Resources/Village Assets/Village Map Assets Backgrounds - Snow.jpg" id="4_h2bmj"]
 [ext_resource type="Texture2D" uid="uid://cme2v7gfwwvuj" path="res://Resources/water.jpg" id="5_r2hkn"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_syhyp"]
+load_path = "res://.godot/imported/tileset.png-a39e944f25b35d62f55d4f98a36e2b5e.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g4bx1"]
+atlas = SubResource("CompressedTexture2D_syhyp")
+region = Rect2(0, 0, 16, 16)
 
 [node name="ResizeableBoard" type="Node2D"]
 
@@ -37,7 +44,14 @@ scale = Vector2(0.382, 0.382)
 texture = ExtResource("4_h2bmj")
 
 [node name="BGWater" type="Sprite2D" parent="Control"]
+visible = false
 z_index = -4096
 position = Vector2(600.5, 451)
 scale = Vector2(0.82517, 0.936735)
 texture = ExtResource("5_r2hkn")
+
+[node name="Sprite2D3" type="Sprite2D" parent="Control"]
+z_index = -100
+position = Vector2(581, 624)
+scale = Vector2(84.75, 84.75)
+texture = SubResource("AtlasTexture_g4bx1")

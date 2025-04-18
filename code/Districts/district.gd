@@ -44,14 +44,7 @@ func set_center(id_grid : Grid):
 	center = Vector2i(ceil(float(sum_vector[0]) / size_), ceil(float(sum_vector[1]) / size_))
 
 	if id_grid.index_vec(center) != id:
-		var min_distance : float = locations[0].distance_to(center)
-		var min_location : Vector2i = locations[0]
-		for loc in locations:
-			if loc.distance_to(center) >= min_distance: continue
-			min_distance = loc.distance_to(center)
-			min_location = loc
-
-		center = min_location
+		center = get_nearest(center)
 	
 	distance_to_grid_center = center.distance_to(Vector2(id_grid.height / 2.0, id_grid.width / 2.0))
 
@@ -101,6 +94,22 @@ func set_border(id_grid : Grid, n_type : int = Enums.NeighborsType.EIGHT_NEIGHBO
 			if n_id not in border_by_neighbor: border_by_neighbor[n_id] = []
 			border_by_neighbor[n_id].append(loc)
 			border.append(loc)
+
+func get_nearest(pos : Vector2i) -> Vector2i:
+	var min_distance : float = locations[0].distance_to(pos)
+	var min_location : Vector2i = locations[0]
+	for loc in locations:
+		if loc.distance_to(pos) >= min_distance: continue
+		min_distance = loc.distance_to(pos)
+		min_location = loc
+	
+	return min_location
+
+func has_neighbor(n : int):
+	return n in border_by_neighbor
+
+func rand_border(neighbor : int):
+	return border_by_neighbor[neighbor][randi() % len(border_by_neighbor[neighbor])]
 
 func _draw() -> void:
 	pass

@@ -279,7 +279,7 @@ func is_sparse() -> bool:
 
 # 	return outgoing
 
-func a_star(id_grid : Grid, start : Vector2i, end : Vector2i, n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> Array[Vector2i]: 
+func a_star(id_grid : Grid, start : Vector2i, end : Vector2i, avoidance, n_type : int = Enums.NeighborsType.EIGHT_NEIGHBORS) -> Array[Vector2i]: 
 	'''
 		Purpose:
 			Use the A* Algorithm to determine the path between 2 points in an ID grid
@@ -300,7 +300,12 @@ func a_star(id_grid : Grid, start : Vector2i, end : Vector2i, n_type : int = Enu
 	if randWeights == []:
 		init_rand_weights(id_grid, 5.0)
 
-	
+	for pos in avoidance:
+		for n in neighbors[Enums.NeighborsType.FOUR_NEIGHBORS]:
+			var n_pos = n + pos
+			if not bounds_check(n_pos, Vector2i(len(randWeights), len(randWeights[0]))): continue
+			randWeights[n_pos[0]][n_pos[1]] += 1000
+
 	# Initialize data structures
 	var prev : Dictionary = {} # Dict for the previous node a node comes from
 	var dist : Dictionary = {} # Dict for distance of a node from the start
@@ -353,18 +358,25 @@ func a_star(id_grid : Grid, start : Vector2i, end : Vector2i, n_type : int = Enu
 		return _path
 
 	# Reconstruct the path from the 'prev' dictionary
-	var reconstruct : Vector2i = prev[end]
-	while reconstruct != start:
+	var reconstruct : Vector2i = end
+	while reconstruct != null:
 		_path.append(reconstruct)
+		if prev[reconstruct] == null: break
 		reconstruct = prev[reconstruct]
+
+	for pos in avoidance:
+		for n in neighbors[Enums.NeighborsType.FOUR_NEIGHBORS]:
+			var n_pos = n + pos
+			if not bounds_check(n_pos, Vector2i(len(randWeights), len(randWeights[0]))): continue
+			randWeights[n_pos[0]][n_pos[1]] += 1000
 
 	return _path
 
 var alternate_weightings : Dictionary = {
-	Enums.Cell.DISTRICT_WALL : 100, 
-	Enums.Cell.OUTSIDE_SPACE : 20,
+	# Enums.Cell.DISTRICT_WALL : 100, 
+	# Enums.Cell.OUTSIDE_SPACE : 20,
 	Enums.Cell.WATER : 40,
-
+	Enums.Cell.BRIDGE : 1000,
 }
 
 # TODO: Could actually initialize rand_weights as its own grid object (?)
